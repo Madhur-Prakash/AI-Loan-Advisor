@@ -1,5 +1,8 @@
 import uuid
 from typing import Dict, Any, Optional
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from agents.master_agent import MasterAgent
 from agents.sales_agent import SalesAgent
 from agents.verification_agent import VerificationAgent
