@@ -29,7 +29,7 @@ uv sync
 
 ### 2. Run the Server
 ```bash
-uv run python main.py
+uvicorn app:app --reload
 ```
 
 ### 3. Test the API
