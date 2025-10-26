@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from models.loan_models import LoanApplication, AgentResponse
 from services.llm_service import LLMService
 

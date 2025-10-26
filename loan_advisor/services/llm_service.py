@@ -1,30 +1,32 @@
 import os
-from groq import Groq
+from langchain_groq import ChatGroq
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from dotenv import load_dotenv
 from typing import Dict, Any
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
 class LLMService:
     def __init__(self):
-        self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-        self.model = "llama3-8b-8192"
+        self.model = "llama-3.3-70b-versatile"
+        self.client = ChatGroq(api_key=os.getenv("GROQ_API_KEY"), model_name=self.model)
     
     async def generate_response(self, agent_name: str, context: Dict[str, Any], user_message: str) -> str:
         system_prompt = self._get_agent_prompt(agent_name, context)
         
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message}
-                ],
-                temperature=0.7,
-                max_tokens=500
-            )
-            return response.choices[0].message.content
+            prompt = ChatPromptTemplate.from_messages([("system", system_prompt)])
+            chain = prompt | self.client | StrOutputParser()
+            response = chain.invoke({"input": user_message})
+            logger.info(f"✅LLM response for {agent_name}: {response}")
+            return response
         except Exception as e:
+            logger.error(f"Error generating response: {e}")
             return self._get_fallback_response(agent_name, context)
     
     def _get_agent_prompt(self, agent_name: str, context: Dict[str, Any]) -> str:

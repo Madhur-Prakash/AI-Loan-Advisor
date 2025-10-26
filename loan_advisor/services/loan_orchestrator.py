@@ -24,8 +24,8 @@ class LoanOrchestrator:
         self.applications: Dict[str, LoanApplication] = {}
     
     async def start_application(self, customer_id: str, initial_message: str = "") -> Dict[str, Any]:
-        app_id = str(uuid.uuid4())
-        
+        # app_id = str(uuid.uuid4())
+        app_id = "12345"  # For testing purposes, use a fixed application ID
         application = LoanApplication(
             application_id=app_id,
             customer=Customer(customer_id=customer_id)
