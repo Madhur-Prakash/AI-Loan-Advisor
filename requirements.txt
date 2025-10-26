@@ -1,0 +1,11 @@
+fastapi,
+groq
+langchain-core
+langchain-groq
+mcp
+pydantic
+python-dotenv
+python-multipart
+reportlab
+requests
+uvicorn
