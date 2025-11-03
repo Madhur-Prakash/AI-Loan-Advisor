@@ -1,0 +1,27 @@
+flowchart TD
+    U[User] -->|message| API[/chat/]
+    API --> ORC[LoanOrchestrator]
+
+    ORC -->|INITIATED| MA[MasterAgent]
+    ORC -->|SALES_DISCUSSION| SA[SalesAgent]
+    ORC -->|KYC_VERIFICATION| VA[VerificationAgent]
+    ORC -->|UNDERWRITING| UA[UnderwritingAgent]
+    ORC -->|ELIGIBILITY_CHECK| EA[EligibilityAgent]
+    ORC -->|APPROVED| PA[PDFAgent]
+
+    subgraph Agents
+      MA --- SA --- VA --- UA --- EA --- PA
+    end
+
+    MA --> ORC
+    SA --> ORC
+    VA --> ORC
+    UA --> ORC
+    EA --> ORC
+    PA --> ORC
+
+    ORC --> APP[(LoanApplication)]
+    APP --> ORC
+
+    PA --> PDF[(Sanction Letter PDF)]
+    PDF -.-> U

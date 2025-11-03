@@ -355,3 +355,37 @@ Run the automated test script to verify all scenarios:
 ```bash
 uv run python test_client.py
 ```
+
+## Diagrams
+
+Use the sequence diagram to align test flows with the agent conversation. This helps verify that each test exercises the expected transitions and actions.
+
+- Full workflow docs: `docs/agent_workflow.md`
+- Sequence diagram image: `docs/images/sequence-conversation-via-chat.svg`
+- Inline preview:
+
+  ![Sequence](docs/images/sequence-conversation-via-chat.svg)
+
+Mapping common tests to the sequence:
+
+- `tests/test_client.py`
+  - Runs the end-to-end `/chat` flow: INITIATED → SALES_DISCUSSION → KYC_VERIFICATION → UNDERWRITING → ELIGIBILITY_CHECK → APPROVED → COMPLETED.
+  - Verifies messages and `application_id`, then checks `/application/{app_id}` snapshot.
+
+- `tests/test_scenarios.py`
+  - Happy path mirrors the full sequence culminating in PDF generation.
+  - Denial paths:
+    - KYC failure aligns with the VerificationAgent segment (PAN/Aadhar validation → `REJECTED`).
+    - Eligibility failure aligns with the EligibilityAgent segment (EMI/salary ratio or pre-approved limit → `REJECTED`).
+
+- `tests/test_kyc_validation.py`
+  - Focuses on the KYC step in `KYC_VERIFICATION`: PAN and Aadhar format validation, mock KYC outcome.
+
+- `tests/interactive_test.py`
+  - Manual reproduction of the sequence: provide name → loan amount → tenure → PAN → Aadhar → Continue → salary; then verify approval and PDF path.
+
+Tips to exercise specific branches (tie-ins to diagram steps):
+
+- Set `KYC_SUCCESS_RATE` env var to influence the VerificationAgent step (e.g., `KYC_SUCCESS_RATE=0.20` for more failures).
+- Adjust `salary` to move the EligibilityAgent decision over/under the EMI threshold.
+- After approval, use `GET /sanction-letter/{app_id}` to validate the final PDF step.

@@ -1,5 +1,25 @@
 # AI Loan Processing System
 
+## Agent Workflow Diagrams
+
+The loan advisor workflow is documented with Mermaid diagrams and pre-rendered images.
+
+- Full doc: `docs/agent_workflow.md`
+
+Quick view images:
+
+- State Machine
+  - `docs/images/state-machine-loanstatus.svg`
+  - ![State Machine](docs/images/state-machine-loanstatus.svg)
+- Conversation Sequence
+  - `docs/images/sequence-conversation-via-chat.svg`
+  - ![Sequence](docs/images/sequence-conversation-via-chat.svg)
+- Architecture Flow
+  - `docs/images/architecture-orchestrator-and-agents.svg`
+  - ![Architecture](docs/images/architecture-orchestrator-and-agents.svg)
+
+Tip: GitHub renders these SVGs directly. For PNG exports or re-rendering, use `python3 scripts/render_mermaid.py docs/agent_workflow.md docs/images svg,png` (fallbacks included), or run with `--local` after installing `@mermaid-js/mermaid-cli`.
+
 A comprehensive AI-driven loan processing system with multiple specialized agents orchestrated through MCP (Model Context Protocol) server and exposed via FastAPI.
 
 ## Architecture
