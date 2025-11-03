@@ -1,0 +1,14 @@
+stateDiagram-v2
+    [*] --> INITIATED
+
+    INITIATED --> SALES_DISCUSSION: MasterAgent collects name
+    SALES_DISCUSSION --> KYC_VERIFICATION: SalesAgent gathers loan & tenure, sets EMI/rate
+    KYC_VERIFICATION --> UNDERWRITING: VerificationAgent validates PAN/Aadhar
+    KYC_VERIFICATION --> REJECTED: KYC failure
+    UNDERWRITING --> ELIGIBILITY_CHECK: UnderwritingAgent sets credit score & pre-approved limit
+    ELIGIBILITY_CHECK --> APPROVED: EligibilityAgent EMI/salary within limits
+    ELIGIBILITY_CHECK --> REJECTED: Eligibility failure (ratio/limits)
+    APPROVED --> COMPLETED: PDFAgent generates sanction letter (PDF)
+
+    REJECTED --> [*]
+    COMPLETED --> [*]

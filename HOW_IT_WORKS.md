@@ -222,3 +222,20 @@ If Groq API fails, system uses hardcoded responses ensuring continuity.
 Check `loan_orchestrator.py` `_extract_data_from_message()` for parsing logic.
 
 This architecture provides a scalable, maintainable system where each component has a single responsibility, making it easy to modify business logic, add new agents, or integrate with external systems.
+
+## Visual Workflow
+
+To complement the step-by-step description, the agent workflow is illustrated with diagrams.
+
+- Full documentation with Mermaid diagrams: `docs/agent_workflow.md`
+
+Quick links to pre-rendered images:
+
+- State Machine: `docs/images/state-machine-loanstatus.svg`
+- Conversation Sequence: `docs/images/sequence-conversation-via-chat.svg`
+- Architecture Flow: `docs/images/architecture-orchestrator-and-agents.svg`
+
+Regenerating the images:
+
+- `python3 scripts/render_mermaid.py docs/agent_workflow.md docs/images svg,png`
+- For local rendering (no external service), install `@mermaid-js/mermaid-cli` and add `--local`.
