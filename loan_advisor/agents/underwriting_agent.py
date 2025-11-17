@@ -4,7 +4,7 @@ from models.loan_models import LoanApplication, AgentResponse, LoanStatus
 
 class UnderwritingAgent(BaseAgent):
     def __init__(self):
-        super().__init__("Underwriting Agent")
+        super().__init__("CREDO (Credit Evaluation & Decision Operator)")
     
     async def process(self, application: LoanApplication, message: str) -> AgentResponse:
         # Fetch credit score (mock)

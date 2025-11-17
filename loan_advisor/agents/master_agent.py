@@ -3,7 +3,7 @@ from models.loan_models import LoanApplication, AgentResponse, LoanStatus
 
 class MasterAgent(BaseAgent):
     def __init__(self):
-        super().__init__("Master Agent")
+        super().__init__("AURA (Automated User Relationship Assistant)")
     
     async def process(self, application: LoanApplication, message: str) -> AgentResponse:
         context = self.get_context(application)
