@@ -1,5 +1,6 @@
 import uuid
 from typing import Dict, Any, Optional
+import re
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -88,7 +89,6 @@ class LoanOrchestrator:
         """If both messages begin with a greeting, strip the salutation from the second.
         Keeps the content while removing repeated "Hello/Hi/Welcome" style openers.
         """
-        import re
 
         def has_greeting(text: str) -> bool:
             return bool(re.match(r"^\s*(hello|hi|hey|welcome)\b", text.strip(), re.IGNORECASE))
@@ -150,8 +150,7 @@ class LoanOrchestrator:
                     amount *= 10000000
                 application.loan_amount = amount
         
-        # Extract or update tenure
-        import re
+        
         # Case A: explicit unit provided (always allow update if present in message)
         tenure_match = re.search(r'(\d+)\s*(months?|month|years?|yrs?|y)\b', message_lower)
         if tenure_match:
