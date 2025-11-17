@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -23,7 +24,8 @@ async def generate_sample():
     
     pdf_agent = PDFAgent()
     result = await pdf_agent.process(app, '')
-    print(f"Sample sanction letter generated: {result.data_updates['sanction_letter_path']}")
+    return_res = result.data_updates["sanction_letter_path"]["appwrite_file"]
+    return return_res
 
 if __name__ == "__main__":
     asyncio.run(generate_sample())

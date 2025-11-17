@@ -1,6 +1,6 @@
 # AI Loan Processing System
 
-A comprehensive AI-driven loan processing system with multiple specialized agents orchestrated through MCP (Model Context Protocol) server and exposed via FastAPI.
+A comprehensive AI-driven loan processing system with multiple specialized agents orchestrated through AI Agents and exposed via FastAPI.
 
 ## Architecture
 
@@ -99,7 +99,7 @@ response = requests.post("http://localhost:8000/chat", json={
 ```
 ├── agents/          # Agent implementations
 ├── models/          # Data models
-├── services/        # MCP server and orchestrator
+├── services/        # AI agents and orchestrator
 ├── main.py          # FastAPI application
 ├── test_client.py   # Test client
 └── sanction_letters/ # Generated PDFs

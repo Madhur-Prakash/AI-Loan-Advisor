@@ -1,14 +1,29 @@
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import string
+from dotenv import load_dotenv
+import logging
+import io
+import uuid
+from appwrite.input_file import InputFile
+from appwrite.services.storage import Storage
 from datetime import datetime, timedelta
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from services.app_write_service import client
 from agents.base_agent import BaseAgent
 from models.loan_models import LoanApplication, AgentResponse, LoanStatus
+
+load_dotenv()
+BUCKET_ID = os.getenv("BUCKET_ID")
+logging.basicConfig(level=logging.INFO)
+
+# create appwrite storage service
+storage = Storage(client)
 
 class PDFAgent(BaseAgent):
     def __init__(self):
@@ -48,14 +63,9 @@ class PDFAgent(BaseAgent):
     
     def _generate_sanction_letter(self, application: LoanApplication) -> str:
         filename = f"sanction_letters/sanction_letter_{application.application_id}.pdf"
-        c = canvas.Canvas(filename, pagesize=letter)
+        buffer = io.BytesIO()
+        c = canvas.Canvas(buffer, pagesize=letter)
         width, height = letter
-
-        def fmt_amt(v: float | None) -> str:
-            try:
-                return f"{self.currency_symbol}{float(v):,.2f}" if v is not None else "-"
-            except Exception:
-                return "-"
 
         def fmt_int(v: float | None) -> str:
             try:
@@ -172,7 +182,19 @@ class PDFAgent(BaseAgent):
         c.drawCentredString(width/2, 40, "This is a system-generated document and does not require a physical signature.")
 
         c.save()
-        return filename
+        pdf_bytes = buffer.getvalue()
+        buffer.close()
+
+        # uploading to Appwrite Storage
+        appwrite_file = storage.create_file(
+            BUCKET_ID,
+            str(uuid.uuid4()),
+            InputFile.from_bytes(pdf_bytes, filename, "application/pdf")
+        )
+
+        logging.info(f"✅File uploaded on Appwrite: {appwrite_file}")
+
+        return {"filename": filename, "appwrite_file": appwrite_file}
 
     def _draw_label_and_amount(self, c: canvas.Canvas, x: float, y_pos: float, label: str, amount_value: float | None):
         """Draw label and amount using a dedicated symbol font for the rupee sign when available."""

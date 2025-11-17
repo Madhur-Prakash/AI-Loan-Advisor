@@ -2,13 +2,31 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
-import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse 
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from loan_advisor.services.loan_orchestrator import LoanOrchestrator
+from tests.generate_sample_pdf import generate_sample
 
 app = FastAPI(title="AI Loan Processing API", version="1.0.0")
+
+#  middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:8080",""
+        "http://127.0.0.1:8080",
+        "http://localhost:8082",
+        "http://127.0.0.1:8082",
+        "https://synfin.vercel.app"
+        ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 orchestrator = LoanOrchestrator()
 
 class ChatRequest(BaseModel):
@@ -76,6 +94,10 @@ async def download_sanction_letter(app_id: str):
     if not os.path.exists(application.sanction_letter_path):
         raise HTTPException(status_code=404, detail="File not found")
     
+    if application.sanction_letter_path.startswith("http://") or application.sanction_letter_path.startswith("https://"): 
+        return RedirectResponse(url=application.sanction_letter_path, status_code=307)
+
+    
     return FileResponse(
         path=application.sanction_letter_path,
         filename=f"sanction_letter_{app_id}.pdf",
@@ -89,3 +111,11 @@ async def health_check():
 @app.get("/")
 async def root():
     return {"message": "Welcome to the AI Loan Processing API"}
+
+@app.post("/test-pdf-on-server")
+async def test_pdf_on_server():
+    try:
+        res = await generate_sample()
+        return {"message": "Sample sanction letter generated successfully on server.", "Document": res}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
