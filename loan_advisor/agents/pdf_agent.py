@@ -17,6 +17,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 from services.app_write_service import client
 from agents.base_agent import BaseAgent
 from models.loan_models import LoanApplication, AgentResponse, LoanStatus
+from services.gen_email import generate_email, convert_string_to_json
+from services.send_email import send_email_with_url_attachment
 
 load_dotenv()
 BUCKET_ID = os.getenv("BUCKET_ID")
@@ -48,12 +50,42 @@ class PDFAgent(BaseAgent):
                 action_required="collect_name"
             )
 
-        pdf_path = self._generate_sanction_letter(application)
+        pdf_result = self._generate_sanction_letter(application)
+        pdf_path = pdf_result["filename"]
+        appwrite_file = pdf_result["appwrite_file"]
+        
+        # Generate public URL for the PDF
+        file_url = f"{os.getenv('API_ENDPOINT')}/storage/buckets/{BUCKET_ID}/files/{appwrite_file['$id']}/view?project={os.getenv('PROJECT_ID')}"
+        
+        # Send email with PDF attachment
+        if application.customer.email:
+            try:
+                email_context = (
+                    f"Loan Application Approved for {application.customer.name}. "
+                    f"Loan Amount: ₹{application.loan_amount:,.0f}, "
+                    f"EMI: ₹{application.emi:,.0f}, "
+                    f"Tenure: {application.tenure_months} months, "
+                    f"Interest Rate: {application.interest_rate}% p.a., "
+                    f"Credit Score: {application.customer.credit_score}, "
+                    f"Status: APPROVED. Sanction letter attached."
+                )
+                email_json_str = generate_email(application.customer.email, email_context)
+                email_data = convert_string_to_json(email_json_str)
+                if email_data:
+                    send_email_with_url_attachment(
+                        email_data["recipient_email"], 
+                        email_data["subject"], 
+                        email_data["body"],
+                        file_url
+                    )
+            except Exception as e:
+                print(f"Failed to send email with attachment: {e}")
         
         return AgentResponse(
             agent_name=self.name,
             message=f"🎉 Your loan has been approved! Your SYNFIN sanction letter has been generated.\n"
-                   f"Document: {pdf_path}\n\n"
+                   f"Document: {pdf_path}\n"
+                   f"A confirmation email with the sanction letter has been sent to {application.customer.email}.\n\n"
                    f"Thank you for choosing SYNFIN. Have a great day!",
             data_updates={
                 "status": LoanStatus.COMPLETED.value,
@@ -83,7 +115,7 @@ class PDFAgent(BaseAgent):
         c.setFont("Helvetica-Bold", 16)
         c.drawString(margin, y - 20, "SYNFIN")
         c.setFont("Helvetica", 10)
-        c.drawRightString(width - margin, y - 20, "support@synfin.com | +91-00000-00000")
+        c.drawRightString(width - margin, y - 20, "synfin.no.reply@gmail.com | +91-00000-00000")
 
         y -= 50
         c.setFillColor(colors.black)

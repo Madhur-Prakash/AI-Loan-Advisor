@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from loan_advisor.services.send_email import send_email
 from loan_advisor.services.loan_orchestrator import LoanOrchestrator
 from tests.generate_sample_pdf import generate_sample
 
@@ -117,5 +118,16 @@ async def test_pdf_on_server():
     try:
         res = await generate_sample()
         return {"message": "Sample sanction letter generated successfully on server.", "Document": res}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/test-email")
+async def test_email():
+    try:
+        to_email = "madhurprakash2005@gmail.com"
+        subject = "Test Email"
+        body = "<h1>This is a test email</h1><p>Sent using Gmail API</p>"
+        send_email(to_email, subject, body)
+        return {"message": "Test email sent successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

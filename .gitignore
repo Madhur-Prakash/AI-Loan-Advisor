@@ -6,7 +6,8 @@ dist/
 wheels/
 *.egg-info
 .env
-
+token.pickle
+credentials.json
 # Virtual environments
 .venv
 .vercel

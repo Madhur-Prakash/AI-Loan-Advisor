@@ -17,6 +17,13 @@ class MasterAgent(BaseAgent):
                     action_required="collect_name"
                 )
             
+            if not application.customer.email:
+                return AgentResponse(
+                    agent_name=self.name,
+                    message=f"Thank you, {application.customer.name}! To keep you updated on your loan application, please provide your email address.",
+                    action_required="collect_email"
+                )
+            
             llm_response = await self.llm.generate_response(self.name, context, "Customer wants to explore loan options")
             return AgentResponse(
                 agent_name=self.name,

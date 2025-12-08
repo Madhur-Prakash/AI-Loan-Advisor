@@ -1,6 +1,12 @@
 from agents.base_agent import BaseAgent
 from models.loan_models import LoanApplication, AgentResponse, LoanStatus
-import math
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+API_ENDPOINT = os.getenv("API_ENDPOINT")
+PROJECT_ID = os.getenv("PROJECT_ID")
+BUCKET_ID = os.getenv("BUCKET_ID")
 
 class EligibilityAgent(BaseAgent):
     def __init__(self):
@@ -276,7 +282,8 @@ class EligibilityAgent(BaseAgent):
                         f"Unfortunately, your EMI-to-salary ratio is {emi_ratio:.1f}% which exceeds SYNFIN's "
                         f"maximum limit of 50%. Your loan application has been rejected.\n\n"
                         f"What you can do next:\n"
-                        f"{suggestion_text}"
+                        f"{suggestion_text}\n\n"
+                        f"A detailed email has been sent to {application.customer.email}."
                     ),
                 data_updates={
                     "status": LoanStatus.REJECTED.value,

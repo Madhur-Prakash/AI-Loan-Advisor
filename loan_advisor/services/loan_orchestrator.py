@@ -191,6 +191,13 @@ class LoanOrchestrator:
             if aadhar_match:
                 application.customer.aadhar = aadhar_match.group()
         
+        # Extract email
+        if not application.customer.email:
+            import re
+            email_match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', message)
+            if email_match:
+                application.customer.email = email_match.group()
+        
         # Extract salary
         if not application.customer.salary:
             import re
@@ -233,9 +240,9 @@ class LoanOrchestrator:
         """
         ml = message.lower()
 
-        # Gate: Always collect customer name before progressing to sales/KYC/underwriting/eligibility/pdf
-        # If name is missing, keep the flow with the Master Agent to collect it.
-        if not application.customer.name:
+        # Gate: Always collect customer name and email before progressing to sales/KYC/underwriting/eligibility/pdf
+        # If name or email is missing, keep the flow with the Master Agent to collect it.
+        if not application.customer.name or not application.customer.email:
             application.status = LoanStatus.INITIATED
             return
         # Sales-related intents: EMI, interest, tenure, loan amount
