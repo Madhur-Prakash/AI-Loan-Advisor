@@ -227,11 +227,26 @@ class SalesAgent(BaseAgent):
             )
         
         if not application.tenure_months:
-            context["loan_amount"] = application.loan_amount
-            llm_response = await self.llm.generate_response(self.name, context, "Ask for tenure preference")
+            # Show EMI options for different tenures to help user decide
+            amt = application.loan_amount
+            if amt <= 500000:
+                rate = 10.5
+            elif amt <= 1000000:
+                rate = 11.5
+            else:
+                rate = 12.5
+            
+            tenures = [12, 24, 36, 48, 60]
+            emi_options = "\n".join([f"• {t} months → EMI ₹{self.calculate_emi(amt, rate, t):,.0f}" for t in tenures])
+            
+            msg = (
+                f"Great! For a loan of ₹{amt:,.0f} at {rate}% p.a., here are your EMI options:\n\n"
+                f"{emi_options}\n\n"
+                "Which tenure would you prefer? (You can choose any tenure between 12-60 months)"
+            )
             return AgentResponse(
                 agent_name=self.name,
-                message=llm_response,
+                message=msg,
                 action_required="collect_tenure"
             )
         

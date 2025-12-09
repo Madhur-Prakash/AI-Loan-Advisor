@@ -139,7 +139,6 @@ class LoanOrchestrator:
         
         # Extract loan amount
         if not application.loan_amount:
-            import re
             amount_match = re.search(r'(\d+(?:,\d+)*(?:\.\d+)?)\s*(?:lakh|lakhs|crore|crores)?', message)
             if amount_match:
                 amount_str = amount_match.group(1).replace(',', '')
@@ -177,30 +176,32 @@ class LoanOrchestrator:
                         if 6 <= n <= 120:
                             application.tenure_months = n
         
-        # Extract PAN
+        # Extract PAN - look for PAN keyword or 10-character alphanumeric pattern
         if not application.customer.pan:
-            import re
-            pan_match = re.search(r'[A-Z]{5}[0-9]{4}[A-Z]{1}', message.upper())
+            # Try exact format first: 5 letters + 4 digits + 1 letter
+            pan_match = re.search(r'[A-Z]{5}[0-9]{4}[A-Z]', message.upper())
             if pan_match:
                 application.customer.pan = pan_match.group()
+            elif 'pan' in message_lower:
+                # If user mentions PAN, extract any 10-character alphanumeric sequence
+                pan_attempt = re.search(r'\b([A-Z0-9]{10})\b', message.upper())
+                if pan_attempt:
+                    application.customer.pan = pan_attempt.group(1)
         
         # Extract Aadhar
         if not application.customer.aadhar:
-            import re
             aadhar_match = re.search(r'\b\d{12}\b', message)
             if aadhar_match:
                 application.customer.aadhar = aadhar_match.group()
         
         # Extract email
         if not application.customer.email:
-            import re
             email_match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', message)
             if email_match:
                 application.customer.email = email_match.group()
         
         # Extract salary
         if not application.customer.salary:
-            import re
             # Support lakh/crore units and month/year qualifiers
             def to_rupees(num_str: str, unit: Optional[str]) -> float:
                 try:
@@ -251,7 +252,6 @@ class LoanOrchestrator:
             'repayment', 'repay', 'installment', 'schedule', 'plan', 'plans', 'options'
         ])
         # Verification-related intents: PAN/Aadhar/KYC
-        import re
         pan_intent = ('pan' in ml) or bool(re.search(r'[A-Z]{5}[0-9]{4}[A-Z]{1}', message.upper()))
         aadhar_intent = ('aadhar' in ml) or bool(re.search(r'\b\d{12}\b', message))
         # Only treat generic 'kyc' as verification intent once core sales details are complete

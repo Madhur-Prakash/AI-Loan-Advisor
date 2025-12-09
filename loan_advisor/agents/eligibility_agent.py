@@ -2,6 +2,7 @@ from agents.base_agent import BaseAgent
 from models.loan_models import LoanApplication, AgentResponse, LoanStatus
 import os
 from dotenv import load_dotenv
+import re
 
 load_dotenv()
 API_ENDPOINT = os.getenv("API_ENDPOINT")
@@ -16,7 +17,6 @@ class EligibilityAgent(BaseAgent):
         ml = (message or "").lower()
 
         # Accept user adjustments to tenure or amount and recompute EMI before eligibility decision
-        import re
         updated_fields = {}
 
         # Tenure updates like: "increase tenure to 69 months", "tenure to 48", "for 60 months"
