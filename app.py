@@ -124,7 +124,7 @@ async def test_pdf_on_server():
 @app.post("/test-email")
 async def test_email():
     try:
-        to_email = "madhurprakash2005@gmail.com"
+        to_email = os.getenv("TEST_EMAIL_RECIPIENT")
         subject = "Test Email"
         body = "<h1>This is a test email</h1><p>Sent using Gmail API</p>"
         send_email(to_email, subject, body)
