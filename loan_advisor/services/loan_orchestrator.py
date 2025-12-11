@@ -137,17 +137,27 @@ class LoanOrchestrator:
                     application.customer.name = parts[i + 1].strip(".,!?")
                     break
         
-        # Extract loan amount
+        # Extract loan amount - only if not already set and context suggests it's a loan amount
         if not application.loan_amount:
-            amount_match = re.search(r'(\d+(?:,\d+)*(?:\.\d+)?)\s*(?:lakh|lakhs|crore|crores)?', message)
-            if amount_match:
-                amount_str = amount_match.group(1).replace(',', '')
-                amount = float(amount_str)
-                if 'lakh' in message_lower:
-                    amount *= 100000
-                elif 'crore' in message_lower:
-                    amount *= 10000000
-                application.loan_amount = amount
+            # Look for loan-related keywords near numbers
+            loan_keywords = ['loan', 'amount', 'rupees', '₹', 'need', 'want', 'borrow']
+            has_loan_context = any(keyword in message_lower for keyword in loan_keywords)
+            
+            # Skip loan amount extraction if message contains email but no loan context
+            if '@' in message and not has_loan_context:
+                pass  # Skip loan amount extraction but continue with other extractions
+            elif has_loan_context:
+                amount_match = re.search(r'(\d+(?:,\d+)*(?:\.\d+)?)\s*(?:lakh|lakhs|crore|crores)?', message)
+                if amount_match:
+                    amount_str = amount_match.group(1).replace(',', '')
+                    amount = float(amount_str)
+                    # Only consider reasonable loan amounts (above 10,000)
+                    if amount >= 10000 or 'lakh' in message_lower or 'crore' in message_lower:
+                        if 'lakh' in message_lower:
+                            amount *= 100000
+                        elif 'crore' in message_lower:
+                            amount *= 10000000
+                        application.loan_amount = amount
         
         
         # Case A: explicit unit provided (always allow update if present in message)
