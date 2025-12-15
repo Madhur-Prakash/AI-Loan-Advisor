@@ -11,4 +11,3 @@ credentials.json
 # Virtual environments
 .venv
 .vercel
-uv.lock
