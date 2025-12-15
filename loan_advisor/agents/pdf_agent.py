@@ -18,7 +18,7 @@ from services.app_write_service import client
 from agents.base_agent import BaseAgent
 from models.loan_models import LoanApplication, AgentResponse, LoanStatus
 from services.gen_email import generate_email, convert_string_to_json
-from services.send_email import send_email_with_url_attachment
+from services.send_email import send_email_with_url_attachment, send_email_with_aiosmtplib
 
 load_dotenv()
 BUCKET_ID = os.getenv("BUCKET_ID")
@@ -72,11 +72,11 @@ class PDFAgent(BaseAgent):
                 email_json_str = generate_email(application.customer.email, email_context)
                 email_data = convert_string_to_json(email_json_str)
                 if email_data:
-                    send_email_with_url_attachment(
+                    await send_email_with_aiosmtplib(
                         email_data["recipient_email"], 
                         email_data["subject"], 
                         email_data["body"],
-                        file_url
+                        file_path=file_url
                     )
             except Exception as e:
                 print(f"Failed to send email with attachment: {e}")

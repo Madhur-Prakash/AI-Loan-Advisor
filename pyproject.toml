@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "aiosmtplib>=5.0.0",
     "appwrite>=13.6.1",
     "fastapi>=0.120.0",
     "google-api-core>=2.28.1",

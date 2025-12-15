@@ -1,8 +1,11 @@
+from email.message import EmailMessage
+from email.mime.application import MIMEApplication
 import os
 import base64
 import pickle
+from email.utils import formatdate
 import time
-import mimetypes
+import aiosmtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -20,6 +23,9 @@ load_dotenv()
 NO_REPLY_EMAIL = os.getenv("NO_REPLY_EMAIL")
 PROJECT_ID = os.getenv("PROJECT_ID")
 APPWRITE_API_KEY = os.getenv("APPWRITE_API_KEY")
+MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
+MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+MAIL_PORT = int(os.getenv("MAIL_PORT", 587))
 
 # Define the scope for Gmail API
 SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
@@ -72,6 +78,71 @@ def send_email(to_email, subject, body, retries=3, delay=5):
     print("Failed to send email after multiple attempts.")
 
 
+async def send_email_with_aiosmtplib(to_email, subject, body, file_path: str, retries=3, delay=5):
+    
+    for attempt in range(retries):
+        try:
+            # ---- Download file from Appwrite ----
+            headers = {
+                "X-Appwrite-Project": PROJECT_ID,
+            }
+            if APPWRITE_API_KEY:
+                headers["X-Appwrite-Key"] = APPWRITE_API_KEY
+
+            response = requests.get(file_path, headers=headers, timeout=30)
+            response.raise_for_status()
+
+            file_data = response.content
+            filename = "sanction_letter.pdf"
+
+            # ---- Build Email ----
+            message = EmailMessage()
+            message["From"] = NO_REPLY_EMAIL
+            message["To"] = to_email
+            message["Subject"] = subject
+            message["Date"] = formatdate(localtime=True)
+
+            # HTML body
+            message.set_content("This email requires an HTML-capable client.")
+            message.add_alternative(body, subtype="html")
+
+            # PDF attachment
+            attachment = MIMEApplication(file_data, _subtype="pdf")
+            attachment.add_header(
+                "Content-Disposition",
+                "attachment",
+                filename=filename
+            )
+            message.attach(attachment)
+
+            # ---- Send via SMTP ----
+            await aiosmtplib.send(
+                message,
+                hostname=MAIL_SERVER,
+                port=MAIL_PORT,
+                username=NO_REPLY_EMAIL,
+                password=MAIL_PASSWORD,
+                use_tls=True,
+                timeout=30
+            )
+
+            print("Email sent successfully")
+            return True
+
+        except aiosmtplib.errors.SMTPAuthenticationError as e:
+            print(f"Gmail authentication failed: {e}")
+            print("Please check:")
+            print("1. Enable 2-Factor Authentication on Gmail")
+            print("2. Generate App Password (not regular password)")
+            print("3. Use the 16-character App Password in MAIL_PASSWORD")
+            raise
+        except Exception as e:
+            print(f"Attempt {attempt + 1} failed: {e}")
+            print(traceback.format_exc())
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise
 
 def send_email_with_url_attachment(to_email, subject, body, file_url: str, retries=3, delay=5):
     
