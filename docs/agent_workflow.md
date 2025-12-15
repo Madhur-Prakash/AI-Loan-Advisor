@@ -1,6 +1,6 @@
 # Agent Workflow Diagrams
 
-This document visualizes the end‑to‑end flow of the Loan Advisor system, including state transitions, agent orchestration, and request sequencing.
+This document visualizes the end‑to‑end flow of the AI Loan Processing system, including state transitions, agent orchestration, and request sequencing.
 
 ## State Machine (LoanStatus)
 
@@ -8,14 +8,14 @@ This document visualizes the end‑to‑end flow of the Loan Advisor system, inc
 stateDiagram-v2
     [*] --> INITIATED
 
-    INITIATED --> SALES_DISCUSSION: MasterAgent collects name
-    SALES_DISCUSSION --> KYC_VERIFICATION: SalesAgent gathers loan & tenure, sets EMI/rate
-    KYC_VERIFICATION --> UNDERWRITING: VerificationAgent validates PAN/Aadhar
-    KYC_VERIFICATION --> REJECTED: KYC failure
-    UNDERWRITING --> ELIGIBILITY_CHECK: UnderwritingAgent sets credit score & pre-approved limit
-    ELIGIBILITY_CHECK --> APPROVED: EligibilityAgent EMI/salary within limits
-    ELIGIBILITY_CHECK --> REJECTED: Eligibility failure (ratio/limits)
-    APPROVED --> COMPLETED: PDFAgent generates sanction letter (PDF)
+    INITIATED --> SALES_DISCUSSION: MasterAgent collects name & email
+    SALES_DISCUSSION --> KYC_VERIFICATION: SalesAgent gathers loan amount & tenure, calculates EMI
+    KYC_VERIFICATION --> UNDERWRITING: VerificationAgent validates PAN/Aadhar via mock APIs
+    KYC_VERIFICATION --> REJECTED: KYC validation failure
+    UNDERWRITING --> ELIGIBILITY_CHECK: UnderwritingAgent fetches credit score & sets pre-approved limits
+    ELIGIBILITY_CHECK --> APPROVED: EligibilityAgent approves based on credit score & EMI ratio
+    ELIGIBILITY_CHECK --> REJECTED: Eligibility failure (EMI > 50% salary or low credit)
+    APPROVED --> COMPLETED: PDFAgent generates sanction letter & sends email
 
     REJECTED --> [*]
     COMPLETED --> [*]
@@ -38,14 +38,22 @@ sequenceDiagram
     U->>API: "Hello" (new conversation)
     API->>ORC: process_message(customer_id, message)
     ORC->>MA: status INITIATED
-    MA-->>ORC: AgentResponse(next_agent=Sales, data_updates: status=SALES_DISCUSSION)
-    ORC-->>API: message: ask name
+    MA-->>ORC: AgentResponse(message: ask name)
+    ORC-->>API: message: "Welcome! May I know your name?"
 
-    U->>API: "My name is ..."
+    U->>API: "My name is John Doe"
     API->>ORC: process_message(...)
+    ORC->>MA: extract name, still INITIATED (missing email)
+    MA-->>ORC: AgentResponse(message: ask email)
+    ORC-->>API: message: "Please provide your email address"
+
+    U->>API: "my email is john@example.com"
+    API->>ORC: process_message(...)
+    ORC->>MA: extract email, route to SALES_DISCUSSION
+    MA-->>ORC: AgentResponse(next_agent=Sales, status=SALES_DISCUSSION)
     ORC->>SA: status SALES_DISCUSSION
-    SA-->>ORC: ask loan_amount & tenure
-    ORC-->>API: message: request loan details
+    SA-->>ORC: ask loan_amount
+    ORC-->>API: message: "What loan amount are you looking for?"
 
     U->>API: "300000 rupees"
     U->>API: "24 months"
@@ -105,10 +113,47 @@ flowchart TD
     PDF -.-> U
 ```
 
-## Notes
-- The orchestrator selects the agent based on `LoanStatus`, applies `AgentResponse.data_updates`, and may auto-advance to `next_agent` to reduce user steps.
-- Failures (KYC or eligibility) set `status=REJECTED` with a `rejection_reason` and end the flow.
-- `PDFAgent` finalizes approval by generating a sanction letter and setting `status=COMPLETED`.
+## Agent Orchestration Details
+
+### How Agents Work Together
+
+1. **LoanOrchestrator** acts as the central coordinator:
+   - Routes messages to appropriate agents based on `LoanStatus`
+   - Extracts data from user messages using smart parsing
+   - Manages application state transitions
+   - Handles agent chaining for seamless flow
+
+2. **Smart Data Extraction**:
+   - **Names**: "My name is X", "I am X" → `application.customer.name`
+   - **Email**: Email regex pattern → `application.customer.email`
+   - **Loan Amount**: "5 lakh", "300000" → `application.loan_amount`
+   - **Tenure**: "24 months", "2 years" → `application.tenure_months`
+   - **PAN/Aadhar**: Format validation → `application.customer.pan/aadhar`
+
+3. **Intent-Based Routing**:
+   - **Sales Intent**: Keywords like 'loan', 'amount', 'EMI' → SalesAgent
+   - **Verification Intent**: PAN/Aadhar provided → VerificationAgent
+   - **Underwriting Intent**: 'credit score' mentioned → UnderwritingAgent
+   - **Eligibility Intent**: 'salary', 'approval' → EligibilityAgent
+
+4. **Agent Responsibilities**:
+   - **MasterAgent**: Welcome, collect name & email, generate loan interest
+   - **SalesAgent**: Discuss loan details, calculate EMI, set interest rates
+   - **VerificationAgent**: Validate KYC documents via mock APIs
+   - **UnderwritingAgent**: Fetch credit score, set pre-approved limits
+   - **EligibilityAgent**: Make approval/rejection decisions
+   - **PDFAgent**: Generate sanction letter, send email notification
+
+5. **Decision Logic**:
+   - **Instant Approval**: Loan ≤ Pre-approved limit + Credit score ≥ 700
+   - **Conditional Approval**: EMI ≤ 50% of salary
+   - **Rejection**: KYC failure OR EMI > 50% salary OR low credit score
+
+### Notes
+- The orchestrator maintains conversation context across multiple API calls
+- Agents can chain together (e.g., Sales → Verification) for smooth user experience
+- All business logic is configurable through agent implementations
+- System handles natural language variations and extracts structured data automatically
 
 ## Pre‑Rendered Images
 - State Machine: ![State Machine](images/state-machine-loanstatus.svg)

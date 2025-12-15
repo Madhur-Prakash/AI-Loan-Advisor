@@ -49,7 +49,7 @@ POST /chat
 3. LLM generates welcoming response asking for name
 4. Returns response with `action_required: "collect_name"`
 
-### **Step 2: Data Collection**
+### **Step 2: Data Collection (Name & Email)**
 ```python
 POST /chat
 {
@@ -62,8 +62,24 @@ POST /chat
 **What happens:**
 1. Orchestrator extracts name from message using regex
 2. Updates `application.customer.name = "John Doe"`
-3. MasterAgent generates interest in loans
-4. Sets `next_agent: "sales_agent"`
+3. MasterAgent asks for email (required before proceeding)
+4. Status remains `INITIATED` until both name and email collected
+
+### **Step 3: Email Collection**
+```python
+POST /chat
+{
+  "customer_id": "CUST001",
+  "application_id": "app_123", 
+  "message": "my email is john@example.com"
+}
+```
+
+**What happens:**
+1. Orchestrator extracts email using regex pattern
+2. Updates `application.customer.email = "john@example.com"`
+3. MasterAgent generates loan interest and routes to SalesAgent
+4. Status changes to `SALES_DISCUSSION`
 
 ### **Step 3: Agent Transitions**
 Each agent determines the next step based on:
@@ -117,10 +133,12 @@ tenure_months = 24    # "2 years" → 24 months
 
 **Extraction patterns:**
 - **Names**: "My name is X", "I am X"
-- **Amounts**: "5 lakh", "10 crore", "500000"
+- **Emails**: Email regex pattern with @ symbol
+- **Amounts**: "5 lakh", "10 crore", "500000" (context-aware, avoids email numbers)
 - **Tenure**: "24 months", "2 years"
-- **PAN**: "ABCDE1234F" format
+- **PAN**: "ABCDE1234F" format (5 letters + 4 digits + 1 letter)
 - **Aadhar**: 12-digit numbers
+- **Salary**: "salary 50000", "50k per month"
 
 ## 🎯 Decision Engine
 
@@ -182,15 +200,26 @@ Modify decision logic in respective agents:
 
 ### **Development**
 ```bash
+# Install dependencies
+uv sync
+
 # Start server
-uv run python main.py
+uvicorn app:app --reload
 
 # Test complete workflow
 uv run python test_client.py
 
 # Test LLM integration
-uv run python test_llm_integration.py
+uv run python tests/test_llm_integration.py
+
+# Interactive testing
+uv run python tests/interactive_test.py
 ```
+
+### **Production Deployment**
+- **AWS EC2**: `http://ec2-43-204-232-206.ap-south-1.compute.amazonaws.com`
+- **Frontend**: `https://synfin.vercel.app`
+- **CORS**: Configured for cross-origin requests
 
 ### **Production Considerations**
 1. **Database**: Replace in-memory storage with persistent DB

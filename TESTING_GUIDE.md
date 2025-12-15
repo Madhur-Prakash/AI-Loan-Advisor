@@ -4,9 +4,12 @@
 
 ### 1. Start the Server
 ```bash
-uv run python main.py
+# Local development
+uvicorn app:app --reload
 ```
 Server starts at: `http://localhost:8000`
+
+**Production Server**: `http://ec2-43-204-232-206.ap-south-1.compute.amazonaws.com`
 
 ### 2. Test Methods
 
@@ -63,14 +66,36 @@ POST http://localhost:8000/chat
 ```json
 {
   "application_id": "same-uuid",
-  "agent_name": "Master Agent", 
-  "message": "Hi John Doe! Great to meet you. Have you considered a personal loan? We offer competitive rates starting from 10.5% with flexible tenure options. Would you like to explore this?",
+  "agent_name": "FINA (Master Agent)",
+  "message": "Nice to meet you, John Doe! To proceed with your loan application, I'll need your email address for communication and documentation.",
+  "status": "initiated",
+  "action_required": "collect_email"
+}
+```
+
+#### Step 3: Provide Email
+**Request:**
+```json
+POST http://localhost:8000/chat
+{
+  "customer_id": "CUST001",
+  "application_id": "same-uuid",
+  "message": "my email is john.doe@example.com"
+}
+```
+
+**Expected Response:**
+```json
+{
+  "application_id": "same-uuid",
+  "agent_name": "FINA (Master Agent)",
+  "message": "Perfect! Now that I have your details, let me tell you about our personal loan offerings. We provide competitive rates starting from 10.5% with flexible tenure options. Are you interested in exploring a personal loan?",
   "status": "sales_discussion",
   "action_required": null
 }
 ```
 
-#### Step 3: Express Interest
+#### Step 4: Express Interest
 **Request:**
 ```json
 POST http://localhost:8000/chat
@@ -84,14 +109,14 @@ POST http://localhost:8000/chat
 **Expected Response:**
 ```json
 {
-  "agent_name": "Sales Agent",
+  "agent_name": "FINA (Financial Interaction & Negotiation Assistant)",
   "message": "Excellent! Let's discuss your loan requirements. What loan amount are you looking for?",
   "status": "sales_discussion",
   "action_required": "collect_loan_amount"
 }
 ```
 
-#### Step 4: Provide Loan Amount
+#### Step 6: Provide Loan Amount
 **Request:**
 ```json
 POST http://localhost:8000/chat
@@ -105,14 +130,14 @@ POST http://localhost:8000/chat
 **Expected Response:**
 ```json
 {
-  "agent_name": "Sales Agent",
-  "message": "Perfect! For ₹3,00,000, what repayment tenure would you prefer? We offer flexible options from 12 to 60 months.",
+  "agent_name": "FINA (Financial Interaction & Negotiation Assistant)",
+  "message": "Great! For a loan of ₹3,00,000 at 10.5% p.a., here are your EMI options:\n\n• 12 months → EMI ₹26,560\n• 24 months → EMI ₹13,493\n• 36 months → EMI ₹9,147\n• 48 months → EMI ₹6,991\n• 60 months → EMI ₹5,707\n\nWhich tenure would you prefer?",
   "status": "sales_discussion",
   "action_required": "collect_tenure"
 }
 ```
 
-#### Step 5: Provide Tenure
+#### Step 7: Provide Tenure
 **Request:**
 ```json
 POST http://localhost:8000/chat
@@ -308,9 +333,9 @@ GET http://localhost:8000/health
 - `"36 months"`
 
 ### **Natural Language Variations**
-- `"My name is John Doe"`
-- `"I am Sarah Smith"`
-- `"Call me Mike"`
+- **Names**: `"My name is John Doe"`, `"I am Sarah Smith"`, `"Call me Mike"`
+- **Emails**: `"my email is john@example.com"`, `"john.doe@company.com"`, `"email: test123@gmail.com"`
+- **Loan Amounts**: `"I need 5 lakh"`, `"300000 rupees"`, `"loan amount 500000"`
 
 ### **Document Formats**
 - PAN: `"ABCDE1234F"`

@@ -13,12 +13,12 @@ A comprehensive AI-driven loan processing system with multiple specialized agent
 - **PDF Agent**: Sanction letter generation
 
 ### Workflow
-1. Customer initiates chat → Master Agent welcomes and generates interest
-2. Sales Agent discusses loan amount, tenure, calculates EMI
-3. Verification Agent validates PAN/Aadhar through mock KYC APIs
-4. Underwriting Agent fetches credit score and sets pre-approved limits
-5. Eligibility Agent makes approval/rejection decisions
-6. PDF Agent generates sanction letter for approved loans
+1. **Master Agent**: Customer initiates chat → collects name & email → generates loan interest
+2. **Sales Agent**: Discusses loan amount & tenure → calculates EMI with interest rate slabs
+3. **Verification Agent**: Validates PAN/Aadhar through mock KYC APIs
+4. **Underwriting Agent**: Fetches credit score → sets pre-approved limits based on score
+5. **Eligibility Agent**: Makes approval/rejection decisions → checks EMI-to-salary ratio
+6. **PDF Agent**: Generates sanction letter → uploads to cloud → sends email notification
 
 ## Quick Start
 
@@ -27,12 +27,21 @@ A comprehensive AI-driven loan processing system with multiple specialized agent
 uv sync
 ```
 
-### 2. Run the Server
+### 2. Configure Environment
+```bash
+cp .env.sample .env
+# Add your GROQ_API_KEY and other credentials
+```
+
+### 3. Run the Server
 ```bash
 uvicorn app:app --reload
 ```
+Server: `http://localhost:8000`
 
-### 3. Test the API
+**Production**: `https://ai-loan-advisor-zeta.vercel.app/`
+
+### 4. Test the API
 ```bash
 uv run python test_client.py
 ```
@@ -95,12 +104,21 @@ response = requests.post("http://localhost:8000/chat", json={
 - EMI > 50% of salary
 - Credit score too low
 
+## Documentation
+
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - Comprehensive system architecture
+- **[Testing Guide](TESTING_GUIDE.md)** - Complete testing procedures
+- **[How It Works](HOW_IT_WORKS.md)** - Detailed workflow explanation
+- **[Agent Workflow](docs/agent_workflow.md)** - Visual diagrams and flow charts
+
 ## File Structure
 ```
-├── agents/          # Agent implementations
-├── models/          # Data models
-├── services/        # AI agents and orchestrator
-├── main.py          # FastAPI application
-├── test_client.py   # Test client
+├── loan_advisor/
+│   ├── agents/          # Agent implementations
+│   ├── models/          # Data models
+│   └── services/        # Orchestrator and integrations
+├── docs/            # Architecture and workflow diagrams
+├── tests/           # Test scripts and scenarios
+├── app.py           # FastAPI application
 └── sanction_letters/ # Generated PDFs
 ```
