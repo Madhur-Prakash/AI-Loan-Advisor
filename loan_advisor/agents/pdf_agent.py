@@ -72,7 +72,7 @@ class PDFAgent(BaseAgent):
                 email_json_str = generate_email(application.customer.email, email_context)
                 email_data = convert_string_to_json(email_json_str)
                 if email_data:
-                    await send_email_with_aiosmtplib(
+                    await send_email_with_url_attachment(
                         email_data["recipient_email"], 
                         email_data["subject"], 
                         email_data["body"],

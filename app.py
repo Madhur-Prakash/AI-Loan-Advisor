@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from loan_advisor.services.send_email import send_email, send_email_with_aiosmtplib
+from loan_advisor.services.send_email import send_email_with_url_attachment, send_email_with_aiosmtplib
 from loan_advisor.services.loan_orchestrator import LoanOrchestrator
 from tests.generate_sample_pdf import generate_sample
 
@@ -128,7 +128,7 @@ async def test_email():
         to_email = os.getenv("TEST_EMAIL_RECIPIENT")
         subject = "Test Email"
         body = "<h1>This is a test email</h1><p>Sent using Gmail API</p>"
-        await send_email_with_aiosmtplib(to_email, subject, body, file_path="https://fra.cloud.appwrite.io/v1/storage/buckets/6856b5e8002828b1fe22/files/06c47a6c-a408-4e34-bb66-e05fe7b14be1/view?project=6856b323003243cb7206&mode=admin")
+        await send_email_with_url_attachment(to_email, subject, body, file_path="https://fra.cloud.appwrite.io/v1/storage/buckets/6856b5e8002828b1fe22/files/06c47a6c-a408-4e34-bb66-e05fe7b14be1/view?project=6856b323003243cb7206&mode=admin")
         return {"message": "Test email sent successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
