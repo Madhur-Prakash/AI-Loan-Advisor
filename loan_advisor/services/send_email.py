@@ -155,7 +155,7 @@ async def send_email_with_aiosmtplib(to_email, subject, body, file_path: str, re
             else:
                 raise
 
-def send_email_with_url_attachment(to_email, subject, body, file_path: str, retries=3, delay=5):
+async def send_email_with_url_attachment(to_email, subject, body, file_path: str, retries=3, delay=5):
     
     service = authenticate_gmail_on_render()  
 
