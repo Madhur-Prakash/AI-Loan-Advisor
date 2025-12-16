@@ -79,6 +79,8 @@ def send_email(to_email, subject, body, retries=3, delay=5):
 
 def authenticate_gmail_on_render():
     b64 = os.environ["GMAIL_TOKEN_B64"]
+    if not b64:
+        raise ValueError("GMAIL_TOKEN_B64 environment variable is not set.")
     creds = pickle.loads(base64.b64decode(b64))
 
     if creds.expired and creds.refresh_token:
