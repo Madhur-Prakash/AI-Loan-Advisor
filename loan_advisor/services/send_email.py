@@ -78,19 +78,10 @@ def send_email(to_email, subject, body, retries=3, delay=5):
     print("Failed to send email after multiple attempts.")
 
 def authenticate_gmail_on_render():
-    creds = None
+    b64 = os.environ["GMAIL_TOKEN_B64"]
+    creds = pickle.loads(base64.b64decode(b64))
 
-    TOKEN_PATH = "/etc/secrets/token.pickle"
-
-    # Load token from Render Secret File
-    if os.path.exists(TOKEN_PATH):
-        with open(TOKEN_PATH, "rb") as token:
-            creds = pickle.load(token)
-    else:
-        raise RuntimeError("token.pickle not found in Render Secret Files")
-
-    # Refresh token if expired
-    if creds and creds.expired and creds.refresh_token:
+    if creds.expired and creds.refresh_token:
         creds.refresh(Request())
 
     return build("gmail", "v1", credentials=creds)
