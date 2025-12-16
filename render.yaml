@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: ai-loan-advisor-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: API_ENDPOINT
+        sync: false
+      - key: PROJECT_ID
+        sync: false
+      - key: APPWRITE_API_KEY
+        sync: false
+      - key: BUCKET_ID
+        sync: false
+      - key: AWS_EC2_URL
+        value: https://synfin.vercel.app
+      - key: NO_REPLY_EMAIL
+        sync: false
+      - key: TEST_EMAIL_RECIPIENT
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_SERVER
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "465"
+      - key: MAIL_STARTTLS
+        value: "True"
+      - key: MAIL_SSL_TLS
+        value: "False"
