@@ -6,3 +6,5 @@ services:
     restart: always
     ports:
       - "8000:8000"
+      - "465:465"
+      - "587:587"
