@@ -144,7 +144,7 @@ async def send_email_with_aiosmtplib(to_email, subject, body, file_path: str, re
             else:
                 raise
 
-def send_email_with_url_attachment(to_email, subject, body, file_url: str, retries=3, delay=5):
+def send_email_with_url_attachment(to_email, subject, body, file_path: str, retries=3, delay=5):
     
     service = authenticate_gmail()  
 
@@ -158,7 +158,7 @@ def send_email_with_url_attachment(to_email, subject, body, file_url: str, retri
             if APPWRITE_API_KEY:
                 headers["X-Appwrite-Key"] = APPWRITE_API_KEY
             
-            response = requests.get(file_url, headers=headers)
+            response = requests.get(file_path, headers=headers)
             response.raise_for_status()
 
             file_data = response.content
