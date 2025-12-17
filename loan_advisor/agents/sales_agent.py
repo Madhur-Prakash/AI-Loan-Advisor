@@ -295,6 +295,27 @@ class SalesAgent(BaseAgent):
                 action_required="collect_loan_amount"
             )
         
+        # Check online loan limit (1 crore maximum) immediately after amount is entered
+        if application.loan_amount and application.loan_amount > 10000000:
+            return AgentResponse(
+                agent_name=self.name,
+                message=(
+                    f"❌ **Online Loan Limit Exceeded**\n\n"
+                    f"Your requested loan amount of ₹{application.loan_amount:,.0f} exceeds our online approval limit of ₹1,00,00,000 (1 Crore).\n\n"
+                    f"🏢 **For loans above ₹1 Crore:**\n"
+                    f"• Please visit our nearest SYNFIN branch\n"
+                    f"• Our offline team will assist with your application\n"
+                    f"• Additional documentation may be required\n\n"
+                    f"💡 **Alternatively:**\n"
+                    f"• Reduce your loan amount to ₹1,00,00,000 or below for instant online approval\n"
+                    f"• Say: 'I need 1 crore loan' to proceed online\n\n"
+                    f"📞 **Contact Us:**\n"
+                    f"• Call: +91-00000-00000\n"
+                    f"• Email: synfin.no.reply@gmail.com"
+                ),
+                action_required="collect_loan_amount"
+            )
+        
         # Show EMI options when loan amount is available but tenure is not
         if application.loan_amount and not application.tenure_months:
             amt = application.loan_amount
