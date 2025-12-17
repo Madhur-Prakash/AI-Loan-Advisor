@@ -157,6 +157,31 @@ class EligibilityAgent(BaseAgent):
                         updated_fields["emi"] = application.emi
                     updated_fields["loan_amount"] = application.loan_amount
                     updated_fields["interest_rate"] = annual_rate
+        
+        # Check online loan limit (1 crore maximum)
+        if application.loan_amount > 10000000:
+            return AgentResponse(
+                agent_name=self.name,
+                message=(
+                    f"❌ **Online Loan Limit Exceeded**\n\n"
+                    f"Your requested loan amount of ₹{application.loan_amount:,.0f} exceeds our online approval limit of ₹1,00,00,000 (1 Crore).\n\n"
+                    f"🏢 **For loans above ₹1 Crore:**\n"
+                    f"• Please visit our nearest SYNFIN branch\n"
+                    f"• Our offline team will assist with your application\n"
+                    f"• Additional documentation may be required\n\n"
+                    f"💡 **Alternatively:**\n"
+                    f"• Reduce your loan amount to ₹1,00,00,000 or below for instant online approval\n"
+                    f"• Say: 'Reduce amount to 1 crore' to proceed online\n\n"
+                    f"📞 **Contact Us:**\n"
+                    f"• Call: +91-00000-00000\n"
+                    f"• Email: synfin.no.reply@gmail.com"
+                ),
+                data_updates={
+                    "status": LoanStatus.REJECTED.value,
+                    "rejection_reason": "Loan amount exceeds online approval limit of ₹1 Crore. Please visit branch for offline processing."
+                }
+            )
+        
         # Check if loan amount is within pre-approved limit and credit score >= 700
         if (application.loan_amount <= application.pre_approved_limit and 
             application.customer.credit_score >= 700):
