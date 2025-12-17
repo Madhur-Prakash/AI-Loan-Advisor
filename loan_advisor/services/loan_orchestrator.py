@@ -177,14 +177,7 @@ class LoanOrchestrator:
                 if unit.startswith('y') or unit.startswith('yr') or unit.startswith('year'):
                     n *= 12
                 application.tenure_months = n
-            else:
-                # Case C: fallback bare number interpreted as months when tenure not yet set
-                if not application.tenure_months:
-                    bare_match = re.search(r'\b(\d{1,3})\b', message_lower)
-                    if bare_match:
-                        n = int(bare_match.group(1))
-                        if 6 <= n <= 120:
-                            application.tenure_months = n
+            # Removed auto-extraction of bare numbers to let SalesAgent handle EMI options properly
         
         # Extract PAN - look for PAN keyword or 10-character alphanumeric pattern
         if not application.customer.pan:

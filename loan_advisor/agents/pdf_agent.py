@@ -101,8 +101,16 @@ class PDFAgent(BaseAgent):
 
         def fmt_int(v: float | None) -> str:
             try:
-                return f"{int(v)}" if v is not None else "-"
-            except Exception:
+                if v is not None:
+                    # Ensure we're working with a reasonable integer value
+                    val = int(float(v))
+                    # Validate tenure is within reasonable range (12-120 months)
+                    if 12 <= val <= 120:
+                        return str(val)
+                    else:
+                        return "-"
+                return "-"
+            except (ValueError, TypeError):
                 return "-"
 
         margin = 50
