@@ -19,12 +19,22 @@ class VerificationAgent(BaseAgent):
                 action_required="collect_name"
             )
 
-        # Validate any provided/attempted PAN/Aadhar formats and aggregate errors
+        # Extract new PAN/Aadhar from current message first
+        new_pan = self._find_pan_attempt(message)
+        new_aadhar = self._find_aadhar_attempt(message)
+        
+        # Update application with new values if found
+        if new_pan:
+            application.customer.pan = new_pan
+        if new_aadhar:
+            application.customer.aadhar = new_aadhar
+        
+        # Validate current PAN/Aadhar and aggregate errors
         errors: list[str] = []
-        pan_to_check = application.customer.pan or self._find_pan_attempt(message)
+        pan_to_check = application.customer.pan
         if pan_to_check and not self._is_valid_pan(pan_to_check):
             errors.append("Invalid PAN format")
-        aadhar_to_check = application.customer.aadhar or self._find_aadhar_attempt(message)
+        aadhar_to_check = application.customer.aadhar
         if aadhar_to_check and not self._is_valid_aadhar(aadhar_to_check):
             errors.append("Invalid Aadhar format")
 
