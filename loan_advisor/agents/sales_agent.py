@@ -1,10 +1,12 @@
 from agents.base_agent import BaseAgent
 from models.loan_models import LoanApplication, AgentResponse, LoanStatus
+from services.rate_calculator import RateCalculator
 import re
 
 class SalesAgent(BaseAgent):
     def __init__(self):
         super().__init__("FINA (Financial Interaction & Negotiation Assistant)")
+        self.rate_calculator = RateCalculator()
     
     async def process(self, application: LoanApplication, message: str) -> AgentResponse:
         context = self.get_context(application)
@@ -60,22 +62,22 @@ class SalesAgent(BaseAgent):
 
             if application.loan_amount is not None and not application.tenure_months:
                 amt = application.loan_amount
-                if amt <= 500000:
-                    rate = 10.5
-                elif amt <= 1000000:
-                    rate = 11.5
-                else:
-                    rate = 12.5
                 tchoices = [24, 36, 60]
-                emis = {t: self.calculate_emi(amt, rate, t) for t in tchoices}
+                # Calculate dynamic rates for each tenure
+                rates_and_emis = {}
+                for t in tchoices:
+                    rate = self.rate_calculator.calculate_rate(amt, t)
+                    emi = self.calculate_emi(amt, rate, t)
+                    rates_and_emis[t] = {"rate": rate, "emi": emi}
+                
                 msg = (
                     "I understand the hesitation — let's make this simple.\n"
-                    f"For ₹{amt:,.0f} at {rate}% p.a., here are illustrative EMIs by tenure:\n"
-                    f"• {tchoices[0]} months → EMI ₹{emis[tchoices[0]]:,.0f}\n"
-                    f"• {tchoices[1]} months → EMI ₹{emis[tchoices[1]]:,.0f}\n"
-                    f"• {tchoices[2]} months → EMI ₹{emis[tchoices[2]]:,.0f}\n\n"
-                    "Longer tenure lowers EMI but increases total interest. Which tenure feels comfortable to you?"
+                    f"For ₹{amt:,.0f}, here are your options with dynamic rates:\n"
                 )
+                for t in tchoices:
+                    msg += f"• {t} months → EMI ₹{rates_and_emis[t]['emi']:,.0f} ({rates_and_emis[t]['rate']}% p.a.)\n"
+                msg += "\nLonger tenure lowers EMI but increases total interest. Which tenure feels comfortable to you?"
+                
                 return AgentResponse(
                     agent_name=self.name,
                     message=msg,
@@ -84,12 +86,7 @@ class SalesAgent(BaseAgent):
 
             if application.loan_amount is not None and application.tenure_months:
                 amt = application.loan_amount
-                if amt <= 500000:
-                    rate = 10.5
-                elif amt <= 1000000:
-                    rate = 11.5
-                else:
-                    rate = 12.5
+                rate = self.rate_calculator.calculate_rate(amt, application.tenure_months)
 
                 m = ambiguous_tenure
                 if m:
@@ -130,42 +127,48 @@ class SalesAgent(BaseAgent):
                 )
 
         # Handle interest rate negotiation requests
-        rate_negotiation_keywords = ["reduce", "lower", "decrease", "discount", "better rate", "negotiate", "can you do better", "best rate"]
+        rate_negotiation_keywords = ["reduce", "lower", "decrease", "discount", "better rate", "negotiate", "can you do better", "best rate", "cheaper", "less interest"]
         if any(keyword in ml for keyword in rate_negotiation_keywords):
             if application.loan_amount:
-                current_rate = 10.5 if application.loan_amount <= 500000 else (11.5 if application.loan_amount <= 1000000 else 12.5)
-                reduced_rate = max(9.5, current_rate - 0.5)  # Minimum 9.5%, reduce by 0.5%
+                # Get current rate dynamically
+                tenure = application.tenure_months or 36
+                current_rate = self.rate_calculator.calculate_rate(application.loan_amount, tenure)
+                
+                # Get negotiated rate
+                reduced_rate = self.rate_calculator.get_negotiated_rate(current_rate, application.loan_amount)
                 
                 if application.tenure_months:
                     old_emi = self.calculate_emi(application.loan_amount, current_rate, application.tenure_months)
                     new_emi = self.calculate_emi(application.loan_amount, reduced_rate, application.tenure_months)
                     savings = old_emi - new_emi
+                    total_savings = savings * application.tenure_months
                     
                     msg = (
-                        f"🎯 **Great news!** I can offer you a special rate of {reduced_rate}% p.a.!\n\n"
+                        f"🎯 **Fantastic news!** I can offer you a special rate of {reduced_rate}% p.a.!\n\n"
                         f"💰 **Your Updated Plan:**\n"
                         f"• Loan Amount: ₹{application.loan_amount:,.0f}\n"
-                        f"• New Rate: {reduced_rate}% p.a. (was {current_rate}%)\n"
+                        f"• **New Rate:** {reduced_rate}% p.a. (was {current_rate}%)\n"
                         f"• Tenure: {application.tenure_months} months\n"
-                        f"• New EMI: ₹{new_emi:,.0f} (saves ₹{savings:,.0f}/month!)\n\n"
-                        "This is our best rate for your profile! Ready to proceed?"
+                        f"• **New EMI:** ₹{new_emi:,.0f} (saves ₹{savings:,.0f}/month!)\n"
+                        f"• **Total Savings:** ₹{total_savings:,.0f}\n\n"
+                        "This is our best negotiated rate for your profile! Ready to proceed?"
                     )
                     
                     return AgentResponse(
                         agent_name=self.name,
                         message=msg,
-                        data_updates={"interest_rate": reduced_rate}
+                        data_updates={"interest_rate": reduced_rate, "emi": new_emi}
                     )
                 else:
                     msg = (
-                        f"🎯 **Excellent!** I can offer you a special rate of {reduced_rate}% p.a.!\n\n"
-                        f"Let me show you the EMI options with this better rate for ₹{application.loan_amount:,.0f}:\n\n"
+                        f"🎯 **Excellent negotiation!** I can offer you a special rate of {reduced_rate}% p.a.!\n\n"
+                        f"Here are your EMI options with this **better rate** for ₹{application.loan_amount:,.0f}:\n\n"
                     )
                     
                     tenures = [12, 24, 36, 48, 60]
                     emi_options = "\n".join([f"• **{t} months** → EMI ₹{self.calculate_emi(application.loan_amount, reduced_rate, t):,.0f}" for t in tenures])
                     
-                    msg += f"{emi_options}\n\nWhich tenure works best for you?"
+                    msg += f"{emi_options}\n\n💡 **This is our best negotiated rate!** Which tenure works for you?"
                     
                     return AgentResponse(
                         agent_name=self.name,
@@ -174,7 +177,7 @@ class SalesAgent(BaseAgent):
                         action_required="collect_tenure"
                     )
             else:
-                msg = "I'd be happy to discuss better rates! First, let me know your desired loan amount."
+                msg = "I'd be happy to negotiate the best rates for you! First, let me know your desired loan amount."
                 return AgentResponse(
                     agent_name=self.name,
                     message=msg,
@@ -189,7 +192,7 @@ class SalesAgent(BaseAgent):
                 r'(\d+(?:,\d+)*(?:\.\d+)?)\s*(?:crore|crores)',
                 r'₹\s*(\d+(?:,\d+)*(?:\.\d+)?)',
                 r'(\d+(?:,\d+)*(?:\.\d+)?)\s*rupees?',
-                r'\b(\d{4,})\b'  # 4+ digit numbers as potential amounts
+                r'\b(\d{5,})\b'  # 5+ digit numbers as potential amounts
             ]
             
             for pattern in amount_patterns:
@@ -203,8 +206,8 @@ class SalesAgent(BaseAgent):
                         elif 'crore' in ml:
                             amount *= 10000000
                         
-                        # Only accept reasonable loan amounts
-                        if 10000 <= amount <= 50000000:
+                        # Accept reasonable loan amounts with upper limit
+                        if 10000 <= amount <= 100000000:  # 10k to 10 crore
                             application.loan_amount = amount
                             break
                     except ValueError:
@@ -220,30 +223,27 @@ class SalesAgent(BaseAgent):
                     tval *= 12
                 application.tenure_months = tval
 
-        if ("interest" in ml or "rate" in ml):
+        if ("interest" in ml or "rate" in ml) and "negotiate" not in ml and "reduce" not in ml and "lower" not in ml:
             if application.loan_amount is not None:
-                if application.loan_amount <= 500000:
-                    slab = 10.5
-                    slab_text = "Up to ₹5,00,000: 10.5% p.a."
-                elif application.loan_amount <= 1000000:
-                    slab = 11.5
-                    slab_text = "₹5,00,001–₹10,00,000: 11.5% p.a."
-                else:
-                    slab = 12.5
-                    slab_text = "> ₹10,00,000: 12.5% p.a."
+                # Calculate dynamic rate for standard 36-month tenure
+                slab = self.rate_calculator.calculate_rate(application.loan_amount, 36)
+                breakdown = self.rate_calculator.get_rate_breakdown(application.loan_amount, 36)
+                
                 msg = (
-                    f"Here are SYNFIN's interest rates by amount:\n"
-                    f"- {slab_text}\n\n"
-                    f"Given your amount of ₹{application.loan_amount:,.0f}, the working rate is {slab}% p.a.\n"
-                    f"To compute your EMI, please share preferred tenure (12–60 months)."
+                    f"For ₹{application.loan_amount:,.0f}, your rate is dynamically calculated at {slab}% p.a.\n\n"
+                    f"📊 **Rate Benefits:** {breakdown['benefits']}\n\n"
+                    f"💡 **Good news:** Larger loans get better rates! You can also negotiate further.\n\n"
+                    f"To compute your exact EMI, please share preferred tenure (12–60 months)."
                 )
             else:
                 msg = (
-                    "SYNFIN interest rate slabs:\n"
-                    "- Up to ₹5,00,000: 10.5% p.a.\n"
-                    "- ₹5,00,001–₹10,00,000: 11.5% p.a.\n"
-                    "> ₹10,00,000: 12.5% p.a.\n\n"
-                    "Please share your desired loan amount and tenure (12–60 months) to calculate EMI."
+                    "SYNFIN uses **dynamic rate calculation** based on:\n"
+                    "• Loan amount (higher = better rates!)\n"
+                    "• Tenure (shorter = lower rates)\n"
+                    "• Credit profile\n\n"
+                    "🎯 Typical range: 9.5% - 14% p.a.\n"
+                    "💡 All rates are negotiable!\n\n"
+                    "Please share your desired loan amount to see your personalized rate."
                 )
             return AgentResponse(
                 agent_name=self.name,
@@ -298,32 +298,37 @@ class SalesAgent(BaseAgent):
         # Show EMI options when loan amount is available but tenure is not
         if application.loan_amount and not application.tenure_months:
             amt = application.loan_amount
-            if amt <= 500000:
-                rate = 10.5
-                rate_benefit = "Excellent! You qualify for our lowest rate of 10.5% 🎉"
-            elif amt <= 1000000:
-                rate = 11.5
-                rate_benefit = "Great choice! Your rate is 11.5% - very competitive! 💪"
-            else:
-                rate = 12.5
-                rate_benefit = "Perfect! For higher amounts, your rate is 12.5% 🚀"
             
+            # Calculate dynamic rates for different tenures
             tenures = [12, 24, 36, 48, 60]
-            emi_options = "\n".join([f"• **{t} months** → EMI ₹{self.calculate_emi(amt, rate, t):,.0f}" for t in tenures])
+            tenure_options = []
             
-            total_12 = self.calculate_emi(amt, rate, 12) * 12
-            total_60 = self.calculate_emi(amt, rate, 60) * 60
+            for t in tenures:
+                rate = self.rate_calculator.calculate_rate(amt, t)
+                emi = self.calculate_emi(amt, rate, t)
+                tenure_options.append({"tenure": t, "rate": rate, "emi": emi})
+            
+            # Get rate breakdown for messaging
+            breakdown = self.rate_calculator.get_rate_breakdown(amt, 36)
+            
+            # Calculate savings
+            total_12 = tenure_options[0]["emi"] * 12
+            total_60 = tenure_options[4]["emi"] * 60
             savings = total_60 - total_12
             
+            emi_lines = "\n".join([
+                f"• **{opt['tenure']} months** → EMI ₹{opt['emi']:,.0f} @ {opt['rate']}% p.a."
+                for opt in tenure_options
+            ])
+            
             msg = (
-                f"{rate_benefit}\n\n"
-                f"💰 **Loan Amount:** ₹{amt:,.0f}\n"
-                f"📈 **Interest Rate:** {rate}% p.a.\n\n"
-                f"📅 **Choose your comfortable EMI:**\n"
-                f"{emi_options}\n\n"
+                f"🎯 **Dynamic Rate Applied!** {breakdown['benefits']}\n\n"
+                f"💰 **Loan Amount:** ₹{amt:,.0f}\n\n"
+                f"📅 **Choose your comfortable EMI (rates vary by tenure):**\n"
+                f"{emi_lines}\n\n"
                 f"💡 **Smart Tip:** Shorter tenure saves you ₹{savings:,.0f} in total interest!\n"
                 f"But longer tenure gives lower EMI for better cash flow.\n\n"
-                "Which tenure feels right for your budget? I can also suggest a custom tenure!"
+                "Which tenure feels right for your budget? You can also **negotiate** for even better rates!"
             )
             return AgentResponse(
                 agent_name=self.name,
@@ -332,12 +337,15 @@ class SalesAgent(BaseAgent):
             )
         
         # Final calculation when both amount and tenure are available
-        if application.loan_amount <= 500000:
-            interest_rate = 10.5
-        elif application.loan_amount <= 1000000:
-            interest_rate = 11.5
+        # Use existing rate if already negotiated, otherwise calculate dynamically
+        if hasattr(application, 'interest_rate') and application.interest_rate:
+            interest_rate = application.interest_rate
         else:
-            interest_rate = 12.5
+            interest_rate = self.rate_calculator.calculate_rate(
+                application.loan_amount, 
+                application.tenure_months,
+                application.customer.credit_score
+            )
         
         emi = self.calculate_emi(application.loan_amount, interest_rate, application.tenure_months)
         
