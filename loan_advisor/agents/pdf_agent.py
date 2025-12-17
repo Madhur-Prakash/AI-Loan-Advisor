@@ -83,7 +83,7 @@ class PDFAgent(BaseAgent):
         
         return AgentResponse(
             agent_name=self.name,
-            message=f"🎉 Your loan has been approved! Your SYNFIN sanction letter has been generated.\n"
+            message=f" Your loan has been approved! Your SYNFIN sanction letter has been generated.\n"
                    f"A confirmation email with the sanction letter has been sent to {application.customer.email}.\n\n"
                    f"Thank you for choosing SYNFIN. Have a great day!",
             data_updates={
@@ -231,7 +231,7 @@ class PDFAgent(BaseAgent):
             InputFile.from_bytes(pdf_bytes, filename, "application/pdf")
         )
 
-        logging.info(f"✅File uploaded on Appwrite: {appwrite_file}")
+        logging.info(f"File uploaded on Appwrite: {appwrite_file}")
 
         return {"filename": filename, "appwrite_file": appwrite_file}
 

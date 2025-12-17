@@ -144,8 +144,8 @@ class SalesAgent(BaseAgent):
                     total_savings = savings * application.tenure_months
                     
                     msg = (
-                        f"🎯 **Fantastic news!** I can offer you a special rate of {reduced_rate}% p.a.!\n\n"
-                        f"💰 **Your Updated Plan:**\n"
+                        f" **Fantastic news!** I can offer you a special rate of {reduced_rate}% p.a.!\n\n"
+                        f" **Your Updated Plan:**\n"
                         f"• Loan Amount: ₹{application.loan_amount:,.0f}\n"
                         f"• **New Rate:** {reduced_rate}% p.a. (was {current_rate}%)\n"
                         f"• Tenure: {application.tenure_months} months\n"
@@ -161,14 +161,14 @@ class SalesAgent(BaseAgent):
                     )
                 else:
                     msg = (
-                        f"🎯 **Excellent negotiation!** I can offer you a special rate of {reduced_rate}% p.a.!\n\n"
+                        f" **Excellent negotiation!** I can offer you a special rate of {reduced_rate}% p.a.!\n\n"
                         f"Here are your EMI options with this **better rate** for ₹{application.loan_amount:,.0f}:\n\n"
                     )
                     
                     tenures = [12, 24, 36, 48, 60]
                     emi_options = "\n".join([f"• **{t} months** → EMI ₹{self.calculate_emi(application.loan_amount, reduced_rate, t):,.0f}" for t in tenures])
                     
-                    msg += f"{emi_options}\n\n💡 **This is our best negotiated rate!** Which tenure works for you?"
+                    msg += f"{emi_options}\n\n **This is our best negotiated rate!** Which tenure works for you?"
                     
                     return AgentResponse(
                         agent_name=self.name,
@@ -231,8 +231,8 @@ class SalesAgent(BaseAgent):
                 
                 msg = (
                     f"For ₹{application.loan_amount:,.0f}, your rate is dynamically calculated at {slab}% p.a.\n\n"
-                    f"📊 **Rate Benefits:** {breakdown['benefits']}\n\n"
-                    f"💡 **Good news:** Larger loans get better rates! You can also negotiate further.\n\n"
+                    f" **Rate Benefits:** {breakdown['benefits']}\n\n"
+                    f" **Good news:** Larger loans get better rates! You can also negotiate further.\n\n"
                     f"To compute your exact EMI, please share preferred tenure (12–60 months)."
                 )
             else:
@@ -241,8 +241,8 @@ class SalesAgent(BaseAgent):
                     "• Loan amount (higher = better rates!)\n"
                     "• Tenure (shorter = lower rates)\n"
                     "• Credit profile\n\n"
-                    "🎯 Typical range: 9.5% - 14% p.a.\n"
-                    "💡 All rates are negotiable!\n\n"
+                    " Typical range: 9.5% - 14% p.a.\n"
+                    " All rates are negotiable!\n\n"
                     "Please share your desired loan amount to see your personalized rate."
                 )
             return AgentResponse(
@@ -283,7 +283,7 @@ class SalesAgent(BaseAgent):
             msg = (
                 "Perfect! I'm here to help you find the best loan option. \n\n"
                 "To get started, what loan amount are you considering? \n"
-                "💡 **Popular choices:**\n"
+                " **Popular choices:**\n"
                 "• ₹2,00,000 - ₹5,00,000 (10.5% interest)\n"
                 "• ₹5,00,000 - ₹10,00,000 (11.5% interest)\n"
                 "• Above ₹10,00,000 (12.5% interest)\n\n"
@@ -300,16 +300,16 @@ class SalesAgent(BaseAgent):
             return AgentResponse(
                 agent_name=self.name,
                 message=(
-                    f"❌ **Online Loan Limit Exceeded**\n\n"
+                    f" **Online Loan Limit Exceeded**\n\n"
                     f"Your requested loan amount of ₹{application.loan_amount:,.0f} exceeds our online approval limit of ₹1,00,00,000 (1 Crore).\n\n"
-                    f"🏢 **For loans above ₹1 Crore:**\n"
+                    f" **For loans above ₹1 Crore:**\n"
                     f"• Please visit our nearest SYNFIN branch\n"
                     f"• Our offline team will assist with your application\n"
                     f"• Additional documentation may be required\n\n"
-                    f"💡 **Alternatively:**\n"
+                    f" **Alternatively:**\n"
                     f"• Reduce your loan amount to ₹1,00,00,000 or below for instant online approval\n"
                     f"• Say: 'I need 1 crore loan' to proceed online\n\n"
-                    f"📞 **Contact Us:**\n"
+                    f" **Contact Us:**\n"
                     f"• Call: +91-00000-00000\n"
                     f"• Email: synfin.no.reply@gmail.com"
                 ),
@@ -343,11 +343,11 @@ class SalesAgent(BaseAgent):
             ])
             
             msg = (
-                f"🎯 **Dynamic Rate Applied!** {breakdown['benefits']}\n\n"
-                f"💰 **Loan Amount:** ₹{amt:,.0f}\n\n"
-                f"📅 **Choose your comfortable EMI (rates vary by tenure):**\n"
+                f" **Dynamic Rate Applied!** {breakdown['benefits']}\n\n"
+                f" **Loan Amount:** ₹{amt:,.0f}\n\n"
+                f" **Choose your comfortable EMI (rates vary by tenure):**\n"
                 f"{emi_lines}\n\n"
-                f"💡 **Smart Tip:** Shorter tenure saves you ₹{savings:,.0f} in total interest!\n"
+                f" **Smart Tip:** Shorter tenure saves you ₹{savings:,.0f} in total interest!\n"
                 f"But longer tenure gives lower EMI for better cash flow.\n\n"
                 "Which tenure feels right for your budget? You can also **negotiate** for even better rates!"
             )
@@ -386,17 +386,17 @@ class SalesAgent(BaseAgent):
         alt_emi_long = self.calculate_emi(application.loan_amount, interest_rate, alt_tenure_long)
         
         summary_msg = (
-            f"🎉 **Perfect! Here's your personalized loan plan:**\n\n"
-            f"💰 **Loan Amount:** ₹{application.loan_amount:,.0f}\n"
-            f"📈 **Interest Rate:** {interest_rate}% p.a. (Competitive rate!)\n"
-            f"📅 **Tenure:** {application.tenure_months} months\n"
-            f"💳 **Monthly EMI:** ₹{emi:,.0f}\n"
-            f"📊 **Total Interest:** ₹{total_interest:,.0f}\n"
-            f"💵 **Total Payable:** ₹{total_payable:,.0f}\n\n"
-            f"💡 **Want to explore other options?**\n"
+            f" **Perfect! Here's your personalized loan plan:**\n\n"
+            f" **Loan Amount:** ₹{application.loan_amount:,.0f}\n"
+            f" **Interest Rate:** {interest_rate}% p.a. (Competitive rate!)\n"
+            f" **Tenure:** {application.tenure_months} months\n"
+            f" **Monthly EMI:** ₹{emi:,.0f}\n"
+            f" **Total Interest:** ₹{total_interest:,.0f}\n"
+            f" **Total Payable:** ₹{total_payable:,.0f}\n\n"
+            f" **Want to explore other options?**\n"
             f"• **{alt_tenure_short} months:** EMI ₹{alt_emi_short:,.0f} (Save on interest!)\n"
             f"• **{alt_tenure_long} months:** EMI ₹{alt_emi_long:,.0f} (Lower EMI!)\n\n"
-            "**Ready to proceed?** Say 'proceed for KYC verification', or let me know if you'd like to adjust anything! 🚀"
+            "**Ready to proceed?** Say 'proceed for KYC verification', or let me know if you'd like to adjust anything! "
         )
 
         return AgentResponse(

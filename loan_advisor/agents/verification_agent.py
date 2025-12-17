@@ -42,8 +42,8 @@ class VerificationAgent(BaseAgent):
             err_msg = ""
             if "Invalid PAN format" in errors:
                 err_msg += (
-                    f"❌ **Invalid PAN Format Detected:** '{pan_to_check}'\n\n"
-                    "📋 **Correct PAN Format:** ABCDE1234F\n"
+                    f" **Invalid PAN Format Detected:** '{pan_to_check}'\n\n"
+                    " **Correct PAN Format:** ABCDE1234F\n"
                     "   • First 5 characters: Uppercase letters (A-Z)\n"
                     "   • Next 4 characters: Digits (0-9)\n"
                     "   • Last character: Uppercase letter (A-Z)\n"
@@ -51,8 +51,8 @@ class VerificationAgent(BaseAgent):
                 )
             if "Invalid Aadhar format" in errors:
                 err_msg += (
-                    f"❌ **Invalid Aadhar Format Detected:** '{aadhar_to_check}'\n\n"
-                    "📋 **Correct Aadhar Format:** 12 digits only\n"
+                    f" **Invalid Aadhar Format Detected:** '{aadhar_to_check}'\n\n"
+                    " **Correct Aadhar Format:** 12 digits only\n"
                     "   • Must be exactly 12 digits\n"
                     "   • No spaces or special characters\n"
                     "   • Example: 123456789012\n\n"
@@ -90,7 +90,7 @@ class VerificationAgent(BaseAgent):
         if kyc_success:
             return AgentResponse(
                 agent_name=self.name,
-                message="✅ KYC verification successful! Your identity has been verified. "
+                message=" KYC verification successful! Your identity has been verified. "
                        "Now let's check your credit profile.",
                 next_agent="underwriting_agent",
                 data_updates={"status": LoanStatus.UNDERWRITING.value}
@@ -99,7 +99,7 @@ class VerificationAgent(BaseAgent):
             return AgentResponse(
                 agent_name=self.name,
                 message=(
-                    "❌ **KYC Verification Failed**\n\n"
+                    " **KYC Verification Failed**\n\n"
                     "**Reason:** Unable to verify your identity with the provided documents.\n\n"
                     "**Possible Issues:**\n"
                     "• PAN or Aadhar details don't match government records\n"

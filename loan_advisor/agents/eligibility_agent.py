@@ -163,16 +163,16 @@ class EligibilityAgent(BaseAgent):
             return AgentResponse(
                 agent_name=self.name,
                 message=(
-                    f"❌ **Online Loan Limit Exceeded**\n\n"
+                    f" **Online Loan Limit Exceeded**\n\n"
                     f"Your requested loan amount of ₹{application.loan_amount:,.0f} exceeds our online approval limit of ₹1,00,00,000 (1 Crore).\n\n"
-                    f"🏢 **For loans above ₹1 Crore:**\n"
+                    f" **For loans above ₹1 Crore:**\n"
                     f"• Please visit our nearest SYNFIN branch\n"
                     f"• Our offline team will assist with your application\n"
                     f"• Additional documentation may be required\n\n"
-                    f"💡 **Alternatively:**\n"
+                    f" **Alternatively:**\n"
                     f"• Reduce your loan amount to ₹1,00,00,000 or below for instant online approval\n"
                     f"• Say: 'Reduce amount to 1 crore' to proceed online\n\n"
-                    f"📞 **Contact Us:**\n"
+                    f" **Contact Us:**\n"
                     f"• Call: +91-00000-00000\n"
                     f"• Email: synfin.no.reply@gmail.com"
                 ),
@@ -188,7 +188,7 @@ class EligibilityAgent(BaseAgent):
             
             return AgentResponse(
                 agent_name=self.name,
-                message=f"🎉 Congratulations! Your loan of ₹{application.loan_amount:,.0f} is INSTANTLY APPROVED by SYNFIN!\n"
+                message=f" Congratulations! Your loan of ₹{application.loan_amount:,.0f} is INSTANTLY APPROVED by SYNFIN!\n"
                        f"Processing your SYNFIN sanction letter...",
                 next_agent="pdf_agent",
                 data_updates={"status": LoanStatus.APPROVED.value}
@@ -270,22 +270,22 @@ class EligibilityAgent(BaseAgent):
 
             # Build detailed rejection message
             rejection_msg = (
-                f"❌ **Loan Application Rejected**\n\n"
-                f"📊 **Rejection Reason:**\n"
+                f" **Loan Application Rejected**\n\n"
+                f" **Rejection Reason:**\n"
                 f"Your EMI-to-salary ratio is {emi_ratio:.1f}%, which exceeds SYNFIN's maximum limit of 50%.\n\n"
-                f"💰 **Current Details:**\n"
+                f" **Current Details:**\n"
                 f"• Loan Amount: ₹{loan_amount:,.0f}\n"
                 f"• Monthly EMI: ₹{application.emi:,.0f}\n"
                 f"• Monthly Salary: ₹{salary:,.0f}\n"
                 f"• Tenure: {tenure} months\n"
                 f"• Interest Rate: {application.interest_rate}% p.a.\n\n"
-                f"🔄 **Negotiation Options to Get Approved:**\n\n"
+                f" **Negotiation Options to Get Approved:**\n\n"
             )
 
             # Add specific actionable suggestions
             if suggested_tenure and suggested_emi is not None:
                 rejection_msg += (
-                    f"✅ **Option 1: Increase Tenure**\n"
+                    f" **Option 1: Increase Tenure**\n"
                     f"   Extend to {suggested_tenure} months\n"
                     f"   New EMI: ₹{suggested_emi:,.0f} (within 50% limit)\n"
                     f"   Say: 'Increase tenure to {suggested_tenure} months'\n\n"
@@ -295,7 +295,7 @@ class EligibilityAgent(BaseAgent):
                 cap = application.pre_approved_limit or suggested_amount
                 amt = min(suggested_amount, cap)
                 rejection_msg += (
-                    f"✅ **Option 2: Reduce Loan Amount**\n"
+                    f" **Option 2: Reduce Loan Amount**\n"
                     f"   Lower to ₹{amt:,.0f}\n"
                     f"   Keep current {tenure}-month tenure\n"
                     f"   Say: 'Reduce amount to {int(amt)}'\n\n"
@@ -303,10 +303,10 @@ class EligibilityAgent(BaseAgent):
             
             # Add negotiation with sales agent option
             rejection_msg += (
-                f"✅ **Option 3: Negotiate Better Rate**\n"
+                f" **Option 3: Negotiate Better Rate**\n"
                 f"   Request lower interest rate to reduce EMI\n"
                 f"   Say: 'Can I get a better interest rate?'\n\n"
-                f"✅ **Option 4: Increase Income Proof**\n"
+                f" **Option 4: Increase Income Proof**\n"
                 f"   Add co-applicant income\n"
                 f"   Include additional income sources\n"
                 f"   Provide updated salary details\n\n"
@@ -314,12 +314,12 @@ class EligibilityAgent(BaseAgent):
 
             if application.pre_approved_limit and loan_amount > application.pre_approved_limit:
                 rejection_msg += (
-                    f"⚠️ **Note:** Your pre-approved limit is ₹{application.pre_approved_limit:,.0f}. "
+                    f" **Note:** Your pre-approved limit is ₹{application.pre_approved_limit:,.0f}. "
                     f"Consider staying within this limit for faster approval.\n\n"
                 )
 
             rejection_msg += (
-                f"💬 **Ready to try again?** Share your preferred option or ask me to recalculate!"
+                f" **Ready to try again?** Share your preferred option or ask me to recalculate!"
             )
 
             return AgentResponse(
