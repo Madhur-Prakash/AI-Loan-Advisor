@@ -294,7 +294,6 @@ class EligibilityAgent(BaseAgent):
                 )
 
             rejection_msg += (
-                f"📧 A detailed rejection report has been sent to {application.customer.email or 'your email'}.\n\n"
                 f"💬 **Ready to try again?** Share your preferred option or ask me to recalculate!"
             )
 
