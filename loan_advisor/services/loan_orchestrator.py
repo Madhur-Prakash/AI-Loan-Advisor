@@ -205,7 +205,7 @@ class LoanOrchestrator:
             if email_match:
                 application.customer.email = email_match.group()
         
-        # Extract salary
+        # Extract salary - improved to handle "My monthly salary is 60,000" format
         if not application.customer.salary:
             # Support lakh/crore units and month/year qualifiers
             def to_rupees(num_str: str, unit: Optional[str]) -> float:
@@ -215,7 +215,7 @@ class LoanOrchestrator:
                     return float('nan')
                 if not unit:
                     return base
-                u = unit.lower()
+                u = (unit or "").lower()
                 if re.search(r'crore|crores', u):
                     return base * 10000000
                 if re.search(r'lakh|lakhs|lac|lacs|lkhs|lkh', u):
@@ -225,7 +225,15 @@ class LoanOrchestrator:
             is_monthly = bool(re.search(r'\b(month|monthly|per\s*month|a\s*month)\b', message_lower))
             is_yearly = bool(re.search(r'\b(year|yearly|per\s*year|annum|annual|p\.?a\.?)\b', message_lower))
 
-            # Case 1: explicit salary mention
+            # Case 1: explicit salary mention with "is" pattern (e.g., "My monthly salary is 60,000")
+            salary_is_match = re.search(r'salary\s+is\s+(\d[\d,]*)(?:\s*)(lakh|lakhs|lac|lacs|lkhs|lkh|crore|crores)?', message, re.IGNORECASE)
+            if salary_is_match:
+                value = to_rupees(salary_is_match.group(1), salary_is_match.group(2))
+                if value == value:  # not NaN
+                    application.customer.salary = value if is_monthly or not is_yearly else round(value / 12)
+                    return
+
+            # Case 2: explicit salary mention (e.g., "salary 60000")
             salary_match = re.search(r'salary[^\d]*(\d[\d,]*)(?:\s*)(lakh|lakhs|lac|lacs|lkhs|lkh|crore|crores)?', message, re.IGNORECASE)
             if salary_match:
                 value = to_rupees(salary_match.group(1), salary_match.group(2))
@@ -233,7 +241,7 @@ class LoanOrchestrator:
                     application.customer.salary = value if is_monthly or not is_yearly else round(value / 12)
                     return
 
-            # Case 2: generic amount near monthly/yearly context
+            # Case 3: generic amount near monthly/yearly context
             generic_match = re.search(r'(\d[\d,]*)(?:\s*)(lakh|lakhs|lac|lacs|lkhs|lkh|crore|crores)?', message, re.IGNORECASE)
             if generic_match and ('salary' in message_lower or is_monthly or is_yearly):
                 value = to_rupees(generic_match.group(1), generic_match.group(2))

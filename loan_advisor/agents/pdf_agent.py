@@ -84,7 +84,6 @@ class PDFAgent(BaseAgent):
         return AgentResponse(
             agent_name=self.name,
             message=f"🎉 Your loan has been approved! Your SYNFIN sanction letter has been generated.\n"
-                   f"Document: {pdf_path}\n"
                    f"A confirmation email with the sanction letter has been sent to {application.customer.email}.\n\n"
                    f"Thank you for choosing SYNFIN. Have a great day!",
             data_updates={

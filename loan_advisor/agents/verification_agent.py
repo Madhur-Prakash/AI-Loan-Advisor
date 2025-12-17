@@ -29,22 +29,33 @@ class VerificationAgent(BaseAgent):
             errors.append("Invalid Aadhar format")
 
         if errors:
-            err_text = "; ".join(errors)
+            err_msg = ""
+            if "Invalid PAN format" in errors:
+                err_msg += (
+                    f"❌ **Invalid PAN Format Detected:** '{pan_to_check}'\n\n"
+                    "📋 **Correct PAN Format:** ABCDE1234F\n"
+                    "   • First 5 characters: Uppercase letters (A-Z)\n"
+                    "   • Next 4 characters: Digits (0-9)\n"
+                    "   • Last character: Uppercase letter (A-Z)\n"
+                    "   • Example: ABCDE1234F\n\n"
+                )
+            if "Invalid Aadhar format" in errors:
+                err_msg += (
+                    f"❌ **Invalid Aadhar Format Detected:** '{aadhar_to_check}'\n\n"
+                    "📋 **Correct Aadhar Format:** 12 digits only\n"
+                    "   • Must be exactly 12 digits\n"
+                    "   • No spaces or special characters\n"
+                    "   • Example: 123456789012\n\n"
+                )
+            err_msg += "Please re-enter the correct details in the required format."
+            
             return AgentResponse(
                 agent_name=self.name,
-                message=(
-                    f"{err_text}. "
-                    "PAN must be ABCDE1234F (5 uppercase letters, 4 digits, 1 uppercase letter). "
-                    "Aadhar must be exactly 12 digits. Please re-enter the correct details."
-                ),
+                message=err_msg,
                 action_required=(
-                    "collect_pan_aadhar" if ("Invalid PAN format" in errors and "Invalid Aadhar format" in errors)
+                    "collect_pan_aadhar" if len(errors) == 2
                     else ("collect_pan" if "Invalid PAN format" in errors else "collect_aadhar")
-                ),
-                data_updates={
-                    "status": LoanStatus.REJECTED.value,
-                    "rejection_reason": err_text
-                }
+                )
             )
         
         # If PAN not captured yet, request it
@@ -69,7 +80,7 @@ class VerificationAgent(BaseAgent):
         if kyc_success:
             return AgentResponse(
                 agent_name=self.name,
-                message="KYC verification successful! Your identity has been verified. "
+                message="✅ KYC verification successful! Your identity has been verified. "
                        "Now let's check your credit profile.",
                 next_agent="underwriting_agent",
                 data_updates={"status": LoanStatus.UNDERWRITING.value}
@@ -77,10 +88,23 @@ class VerificationAgent(BaseAgent):
         else:
             return AgentResponse(
                 agent_name=self.name,
-                message="KYC verification failed. Please check your details and try again.",
+                message=(
+                    "❌ **KYC Verification Failed**\n\n"
+                    "**Reason:** Unable to verify your identity with the provided documents.\n\n"
+                    "**Possible Issues:**\n"
+                    "• PAN or Aadhar details don't match government records\n"
+                    "• Documents may be inactive or blacklisted\n"
+                    "• Name mismatch between PAN and Aadhar\n\n"
+                    "**What you can do:**\n"
+                    "• Double-check your PAN and Aadhar numbers\n"
+                    "• Ensure your documents are active and updated\n"
+                    "• Contact SYNFIN support for manual verification\n"
+                    "• Try again with correct details\n\n"
+                    f"A detailed email has been sent to {application.customer.email or 'your registered email'}."
+                ),
                 data_updates={
                     "status": LoanStatus.REJECTED.value,
-                    "rejection_reason": "KYC verification failed"
+                    "rejection_reason": "KYC verification failed - Unable to verify identity with provided documents"
                 }
             )
     

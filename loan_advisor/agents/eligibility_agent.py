@@ -243,51 +243,67 @@ class EligibilityAgent(BaseAgent):
                     if suggested_amount < 50000:
                         suggested_amount = None
 
-            # Build suggestion text
-            suggestions = [
-                "• Reduce the loan amount to lower EMI.",
-                "• Increase the tenure to spread repayments over more months.",
-                "• Make a higher down payment to reduce principal.",
-                "• Add a co-applicant or consolidate income to improve eligibility.",
-                "• Improve credit score to increase pre-approved limits.",
-            ]
+            # Build detailed rejection message
+            rejection_msg = (
+                f"❌ **Loan Application Rejected**\n\n"
+                f"📊 **Rejection Reason:**\n"
+                f"Your EMI-to-salary ratio is {emi_ratio:.1f}%, which exceeds SYNFIN's maximum limit of 50%.\n\n"
+                f"💰 **Current Details:**\n"
+                f"• Loan Amount: ₹{loan_amount:,.0f}\n"
+                f"• Monthly EMI: ₹{application.emi:,.0f}\n"
+                f"• Monthly Salary: ₹{salary:,.0f}\n"
+                f"• Tenure: {tenure} months\n"
+                f"• Interest Rate: {application.interest_rate}% p.a.\n\n"
+                f"🔄 **Negotiation Options to Get Approved:**\n\n"
+            )
 
-            extra = []
+            # Add specific actionable suggestions
             if suggested_tenure and suggested_emi is not None:
-                extra.append(
-                    f"Try increasing tenure to {suggested_tenure} months. Estimated EMI: ₹{suggested_emi:,.0f} (≤ 50% salary)."
+                rejection_msg += (
+                    f"✅ **Option 1: Increase Tenure**\n"
+                    f"   Extend to {suggested_tenure} months\n"
+                    f"   New EMI: ₹{suggested_emi:,.0f} (within 50% limit)\n"
+                    f"   Say: 'Increase tenure to {suggested_tenure} months'\n\n"
                 )
+            
             if suggested_amount:
                 cap = application.pre_approved_limit or suggested_amount
                 amt = min(suggested_amount, cap)
-                extra.append(
-                    f"Consider reducing loan amount to around ₹{amt:,.0f} for current tenure."
+                rejection_msg += (
+                    f"✅ **Option 2: Reduce Loan Amount**\n"
+                    f"   Lower to ₹{amt:,.0f}\n"
+                    f"   Keep current {tenure}-month tenure\n"
+                    f"   Say: 'Reduce amount to {int(amt)}'\n\n"
                 )
+            
+            # Add negotiation with sales agent option
+            rejection_msg += (
+                f"✅ **Option 3: Negotiate Better Rate**\n"
+                f"   Request lower interest rate to reduce EMI\n"
+                f"   Say: 'Can I get a better interest rate?'\n\n"
+                f"✅ **Option 4: Increase Income Proof**\n"
+                f"   Add co-applicant income\n"
+                f"   Include additional income sources\n"
+                f"   Provide updated salary details\n\n"
+            )
+
             if application.pre_approved_limit and loan_amount > application.pre_approved_limit:
-                extra.append(
-                    f"Your pre-approved limit is ₹{application.pre_approved_limit:,.0f}. Lower the requested amount within this limit."
+                rejection_msg += (
+                    f"⚠️ **Note:** Your pre-approved limit is ₹{application.pre_approved_limit:,.0f}. "
+                    f"Consider staying within this limit for faster approval.\n\n"
                 )
 
-            suggestion_text = "\n".join([*extra, *suggestions]) if (extra or suggestions) else "Please adjust amount or tenure to meet the 50% EMI-to-salary rule."
+            rejection_msg += (
+                f"📧 A detailed rejection report has been sent to {application.customer.email or 'your email'}.\n\n"
+                f"💬 **Ready to try again?** Share your preferred option or ask me to recalculate!"
+            )
 
             return AgentResponse(
                 agent_name=self.name,
-                message=(
-                    (
-                        f"Updated terms accepted. Tenure: {application.tenure_months} months. "
-                        f"EMI: ₹{application.emi:,.0f}.\n"
-                    ) if updated_fields else ""
-                ) +
-                    (
-                        f"Unfortunately, your EMI-to-salary ratio is {emi_ratio:.1f}% which exceeds SYNFIN's "
-                        f"maximum limit of 50%. Your loan application has been rejected.\n\n"
-                        f"What you can do next:\n"
-                        f"{suggestion_text}\n\n"
-                        f"A detailed email has been sent to {application.customer.email}."
-                    ),
+                message=rejection_msg,
                 data_updates={
                     "status": LoanStatus.REJECTED.value,
-                    "rejection_reason": f"EMI-to-salary ratio too high: {emi_ratio:.1f}%",
+                    "rejection_reason": f"EMI-to-salary ratio {emi_ratio:.1f}% exceeds 50% limit. Suggested: Increase tenure to {suggested_tenure} months or reduce amount to ₹{suggested_amount:,.0f if suggested_amount else 'N/A'}",
                     **updated_fields
                 }
             )

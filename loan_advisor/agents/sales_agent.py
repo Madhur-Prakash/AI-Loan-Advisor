@@ -375,7 +375,7 @@ class SalesAgent(BaseAgent):
             f"💡 **Want to explore other options?**\n"
             f"• **{alt_tenure_short} months:** EMI ₹{alt_emi_short:,.0f} (Save on interest!)\n"
             f"• **{alt_tenure_long} months:** EMI ₹{alt_emi_long:,.0f} (Lower EMI!)\n\n"
-            "**Ready to proceed?** Say 'proceed' for KYC verification, or let me know if you'd like to adjust anything! 🚀"
+            "**Ready to proceed?** Say 'proceed for KYC verification', or let me know if you'd like to adjust anything! 🚀"
         )
 
         return AgentResponse(
