@@ -303,7 +303,7 @@ class EligibilityAgent(BaseAgent):
                 message=rejection_msg,
                 data_updates={
                     "status": LoanStatus.REJECTED.value,
-                    "rejection_reason": f"EMI-to-salary ratio {emi_ratio:.1f}% exceeds 50% limit. Suggested: Increase tenure to {suggested_tenure} months or reduce amount to ₹{suggested_amount:,.0f if suggested_amount else 'N/A'}",
+                    "rejection_reason": f"EMI-to-salary ratio {emi_ratio:.1f}% exceeds 50% limit. Suggested: Increase tenure to {suggested_tenure} months or reduce amount to ₹{suggested_amount:,.0f}" if suggested_amount else f"EMI-to-salary ratio {emi_ratio:.1f}% exceeds 50% limit. Suggested: Increase tenure to {suggested_tenure} months",
                     **updated_fields
                 }
             )
