@@ -34,9 +34,11 @@ class VerificationAgent(BaseAgent):
         pan_to_check = application.customer.pan
         if pan_to_check and not self._is_valid_pan(pan_to_check):
             errors.append("Invalid PAN format")
+            application.customer.pan = None  # Clear invalid PAN
         aadhar_to_check = application.customer.aadhar
         if aadhar_to_check and not self._is_valid_aadhar(aadhar_to_check):
             errors.append("Invalid Aadhar format")
+            application.customer.aadhar = None  # Clear invalid Aadhar
 
         if errors:
             err_msg = ""

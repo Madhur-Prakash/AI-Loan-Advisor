@@ -186,10 +186,22 @@ class EligibilityAgent(BaseAgent):
         if (application.loan_amount <= application.pre_approved_limit and 
             application.customer.credit_score >= 700):
             
+            total_payable = application.emi * application.tenure_months
+            total_interest = total_payable - application.loan_amount
+            
             return AgentResponse(
                 agent_name=self.name,
-                message=f" Congratulations! Your loan of ₹{application.loan_amount:,.0f} is INSTANTLY APPROVED by SYNFIN!\n"
-                       f"Processing your SYNFIN sanction letter...",
+                message=(
+                    f"**Congratulations! Your loan is INSTANTLY APPROVED!**\n\n"
+                    f"**Approved Loan Details:**\n"
+                    f"• Loan Amount: ₹{application.loan_amount:,.0f}\n"
+                    f"• Monthly EMI: ₹{application.emi:,.0f}\n"
+                    f"• Tenure: {application.tenure_months} months\n"
+                    f"• Interest Rate: {application.interest_rate}% p.a.\n"
+                    f"• Total Interest: ₹{total_interest:,.0f}\n"
+                    f"• Total Payable: ₹{total_payable:,.0f}\n\n"
+                    f"Generating your SYNFIN sanction letter..."
+                ),
                 next_agent="pdf_agent",
                 data_updates={"status": LoanStatus.APPROVED.value}
             )
@@ -218,17 +230,27 @@ class EligibilityAgent(BaseAgent):
             )
         
         if emi_ratio <= 50:
+            total_payable = application.emi * application.tenure_months
+            total_interest = total_payable - application.loan_amount
+            
             return AgentResponse(
                 agent_name=self.name,
                 message=(
                     (
                         f"Updated terms accepted. Tenure: {application.tenure_months} months. "
-                        f"EMI: ₹{application.emi:,.0f}.\n"
+                        f"EMI: ₹{application.emi:,.0f}.\n\n"
                     ) if updated_fields else ""
                 ) +
-                       f"Great! Your EMI-to-salary ratio is {emi_ratio:.1f}% (within acceptable limits).\n"
-                       f"Your loan of ₹{application.loan_amount:,.0f} is APPROVED by SYNFIN!\n"
-                       f"Generating your SYNFIN sanction letter...",
+                    f"**Great news! Your loan is APPROVED!**\n\n"
+                    f"**Approved Loan Details:**\n"
+                    f"• Loan Amount: ₹{application.loan_amount:,.0f}\n"
+                    f"• Monthly EMI: ₹{application.emi:,.0f}\n"
+                    f"• Tenure: {application.tenure_months} months\n"
+                    f"• Interest Rate: {application.interest_rate}% p.a.\n"
+                    f"• Total Interest: ₹{total_interest:,.0f}\n"
+                    f"• Total Payable: ₹{total_payable:,.0f}\n"
+                    f"• EMI-to-Salary Ratio: {emi_ratio:.1f}% (within 50% limit)\n\n"
+                    f"Generating your SYNFIN sanction letter...",
                 next_agent="pdf_agent",
                 data_updates={"status": LoanStatus.APPROVED.value, **updated_fields}
             )

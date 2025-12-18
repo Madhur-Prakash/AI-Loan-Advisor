@@ -81,11 +81,32 @@ class PDFAgent(BaseAgent):
             except Exception as e:
                 print(f"Failed to send email with attachment: {e}")
         
+        # Calculate total payable and interest
+        total_payable = application.emi * application.tenure_months
+        total_interest = total_payable - application.loan_amount
+        
         return AgentResponse(
             agent_name=self.name,
-            message=f" Your loan has been approved! Your SYNFIN sanction letter has been generated.\n"
-                   f"A confirmation email with the sanction letter has been sent to {application.customer.email}.\n\n"
-                   f"Thank you for choosing SYNFIN. Have a great day!",
+            message=(
+                f"**Congratulations! Your loan has been APPROVED!**\n\n"
+                f"**Loan Details:**\n"
+                f"• Loan Amount: ₹{application.loan_amount:,.0f}\n"
+                f"• Monthly EMI: ₹{application.emi:,.0f}\n"
+                f"• Tenure: {application.tenure_months} months\n"
+                f"• Interest Rate: {application.interest_rate}% p.a.\n"
+                f"• Total Interest: ₹{total_interest:,.0f}\n"
+                f"• Total Payable: ₹{total_payable:,.0f}\n\n"
+                f"**Email Sent:**\n"
+                f"A confirmation email with your sanction letter has been sent to {application.customer.email}.\n\n"
+                f"**Sanction Letter:**\n"
+                f"Your official sanction letter has been generated and attached to the email.\n\n"
+                f"**Next Steps:**\n"
+                f"• Check your email for the sanction letter\n"
+                f"• Review the terms and conditions\n"
+                f"• Visit the nearest SYNFIN branch for disbursement\n"
+                f"• First EMI due: 30 days from disbursement\n\n"
+                f"Thank you for choosing SYNFIN! We're excited to support your financial journey."
+            ),
             data_updates={
                 "status": LoanStatus.COMPLETED.value,
                 "sanction_letter_path": pdf_path

@@ -104,13 +104,13 @@ class RateCalculator:
         benefits = []
         
         if loan_amount >= 5000000:
-            benefits.append("🎉 Premium customer discount applied!")
+            benefits.append(" Premium customer discount applied!")
         elif loan_amount >= 2000000:
-            benefits.append("💎 High-value loan discount!")
+            benefits.append(" High-value loan discount!")
         elif loan_amount >= 1000000:
-            benefits.append("⭐ Volume discount applied!")
+            benefits.append(" Volume discount applied!")
         
         if tenure_months <= 24:
-            benefits.append("⚡ Short tenure bonus!")
+            benefits.append(" Short tenure bonus!")
         
         return " ".join(benefits) if benefits else "Competitive market rate"

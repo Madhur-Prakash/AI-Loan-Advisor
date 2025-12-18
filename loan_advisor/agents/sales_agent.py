@@ -184,8 +184,11 @@ class SalesAgent(BaseAgent):
                     action_required="collect_loan_amount"
                 )
 
-        # Extract loan amount from message if not already set
-        if not application.loan_amount:
+        # Extract loan amount from message (allow updates if user provides new amount)
+        # Check if user is explicitly updating the amount
+        is_amount_update = any(word in ml for word in ['change', 'update', 'reduce', 'increase', 'lower', 'need', 'want', 'loan'])
+        
+        if not application.loan_amount or is_amount_update:
             # Look for amount patterns in the message
             amount_patterns = [
                 r'(\d+(?:,\d+)*(?:\.\d+)?)\s*(?:lakh|lakhs)',
@@ -279,22 +282,6 @@ class SalesAgent(BaseAgent):
                     action_required="collect_loan_amount"
                 )
         
-        if not application.loan_amount:
-            msg = (
-                "Perfect! I'm here to help you find the best loan option. \n\n"
-                "To get started, what loan amount are you considering? \n"
-                " **Popular choices:**\n"
-                "• ₹2,00,000 - ₹5,00,000 (10.5% interest)\n"
-                "• ₹5,00,000 - ₹10,00,000 (11.5% interest)\n"
-                "• Above ₹10,00,000 (12.5% interest)\n\n"
-                "Feel free to share any amount that works for your needs!"
-            )
-            return AgentResponse(
-                agent_name=self.name,
-                message=msg,
-                action_required="collect_loan_amount"
-            )
-        
         # Check online loan limit (1 crore maximum) immediately after amount is entered
         if application.loan_amount and application.loan_amount > 10000000:
             return AgentResponse(
@@ -313,6 +300,23 @@ class SalesAgent(BaseAgent):
                     f"• Call: +91-00000-00000\n"
                     f"• Email: synfin.no.reply@gmail.com"
                 ),
+                action_required="collect_loan_amount"
+            )
+        
+        if not application.loan_amount:
+            msg = (
+                "Perfect! I'm here to help you find the best loan option. \n\n"
+                "To get started, what loan amount are you considering? \n"
+                " **Popular choices:**\n"
+                "• ₹2,00,000 - ₹5,00,000 (10.5% interest)\n"
+                "• ₹5,00,000 - ₹10,00,000 (11.5% interest)\n"
+                "• Above ₹10,00,000 (12.5% interest)\n\n"
+                " **Note:** Online approval limit is ₹1 Crore (10 million). For higher amounts, visit our branch.\n\n"
+                "Feel free to share any amount that works for your needs!"
+            )
+            return AgentResponse(
+                agent_name=self.name,
+                message=msg,
                 action_required="collect_loan_amount"
             )
         

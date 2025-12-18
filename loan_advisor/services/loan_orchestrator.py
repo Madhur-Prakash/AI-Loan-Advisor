@@ -138,28 +138,34 @@ class LoanOrchestrator:
                     break
         
         # Extract loan amount - only if not already set and in sales discussion
+        # CRITICAL: Skip if message contains salary keywords to avoid confusion
         if not application.loan_amount and application.status == LoanStatus.SALES_DISCUSSION:
-            # Look for loan-related keywords near numbers
-            loan_keywords = ['loan', 'amount', 'rupees', '₹', 'need', 'want', 'borrow']
-            has_loan_context = any(keyword in message_lower for keyword in loan_keywords)
+            # Skip loan amount extraction if salary is being discussed
+            salary_keywords = ['salary', 'income', 'earning', 'per month', 'monthly', 'per annum', 'annual']
+            is_salary_context = any(keyword in message_lower for keyword in salary_keywords)
             
-            # Skip loan amount extraction if message contains email but no loan context
-            if '@' in message and not has_loan_context:
-                pass  # Skip loan amount extraction but continue with other extractions
-            elif has_loan_context or any(word in message_lower for word in ['lakh', 'crore']):
-                amount_match = re.search(r'(\d+(?:,\d+)*(?:\.\d+)?)\s*(?:lakh|lakhs|crore|crores)?', message)
-                if amount_match:
-                    amount_str = amount_match.group(1).replace(',', '')
-                    amount = float(amount_str)
-                    # Only consider reasonable loan amounts (above 10,000)
-                    if amount >= 10000 or 'lakh' in message_lower or 'crore' in message_lower:
-                        if 'lakh' in message_lower:
-                            amount *= 100000
-                        elif 'crore' in message_lower:
-                            amount *= 10000000
-                        # Cap at reasonable maximum
-                        if amount <= 100000000:  # 10 crore max
-                            application.loan_amount = amount
+            if not is_salary_context:
+                # Look for loan-related keywords near numbers
+                loan_keywords = ['loan', 'amount', 'rupees', '₹', 'need', 'want', 'borrow']
+                has_loan_context = any(keyword in message_lower for keyword in loan_keywords)
+                
+                # Skip loan amount extraction if message contains email but no loan context
+                if '@' in message and not has_loan_context:
+                    pass  # Skip loan amount extraction but continue with other extractions
+                elif has_loan_context or any(word in message_lower for word in ['lakh', 'crore']):
+                    amount_match = re.search(r'(\d+(?:,\d+)*(?:\.\d+)?)\s*(?:lakh|lakhs|crore|crores)?', message)
+                    if amount_match:
+                        amount_str = amount_match.group(1).replace(',', '')
+                        amount = float(amount_str)
+                        # Only consider reasonable loan amounts (above 10,000)
+                        if amount >= 10000 or 'lakh' in message_lower or 'crore' in message_lower:
+                            if 'lakh' in message_lower:
+                                amount *= 100000
+                            elif 'crore' in message_lower:
+                                amount *= 10000000
+                            # Cap at reasonable maximum and set valid amount
+                            if 10000 <= amount <= 100000000:  # 10k to 10 crore
+                                application.loan_amount = amount
         
         
         # Case A: explicit unit provided (always allow update if present in message)
@@ -210,7 +216,8 @@ class LoanOrchestrator:
             # Support lakh/crore units and month/year qualifiers
             def to_rupees(num_str: str, unit: Optional[str]) -> float:
                 try:
-                    base = float(num_str.replace(',', ''))
+                    # Remove commas and spaces from number string
+                    base = float(num_str.replace(',', '').replace(' ', ''))
                 except Exception:
                     return float('nan')
                 if not unit:
@@ -225,8 +232,8 @@ class LoanOrchestrator:
             is_monthly = bool(re.search(r'\b(month|monthly|per\s*month|a\s*month)\b', message_lower))
             is_yearly = bool(re.search(r'\b(year|yearly|per\s*year|annum|annual|p\.?a\.?)\b', message_lower))
 
-            # Case 1: explicit salary mention with "is" pattern (e.g., "My monthly salary is 60,000")
-            salary_is_match = re.search(r'salary\s+is\s+(\d[\d,]*)(?:\s*)(lakh|lakhs|lac|lacs|lkhs|lkh|crore|crores)?', message, re.IGNORECASE)
+            # Case 1: explicit salary mention with "is" pattern (e.g., "My monthly salary is 60,000" or "70 000")
+            salary_is_match = re.search(r'salary\s+is\s+([\d,\s]+)(?:\s*)(lakh|lakhs|lac|lacs|lkhs|lkh|crore|crores)?', message, re.IGNORECASE)
             if salary_is_match:
                 value = to_rupees(salary_is_match.group(1), salary_is_match.group(2))
                 if value == value:  # not NaN
@@ -234,7 +241,7 @@ class LoanOrchestrator:
                     return
 
             # Case 2: explicit salary mention (e.g., "salary 60000")
-            salary_match = re.search(r'salary[^\d]*(\d[\d,]*)(?:\s*)(lakh|lakhs|lac|lacs|lkhs|lkh|crore|crores)?', message, re.IGNORECASE)
+            salary_match = re.search(r'salary[^\d]*([\d,\s]+)(?:\s*)(lakh|lakhs|lac|lacs|lkhs|lkh|crore|crores)?', message, re.IGNORECASE)
             if salary_match:
                 value = to_rupees(salary_match.group(1), salary_match.group(2))
                 if value == value:  # not NaN
@@ -242,7 +249,7 @@ class LoanOrchestrator:
                     return
 
             # Case 3: generic amount near monthly/yearly context
-            generic_match = re.search(r'(\d[\d,]*)(?:\s*)(lakh|lakhs|lac|lacs|lkhs|lkh|crore|crores)?', message, re.IGNORECASE)
+            generic_match = re.search(r'([\d,\s]+)(?:\s*)(lakh|lakhs|lac|lacs|lkhs|lkh|crore|crores)?', message, re.IGNORECASE)
             if generic_match and ('salary' in message_lower or is_monthly or is_yearly):
                 value = to_rupees(generic_match.group(1), generic_match.group(2))
                 if value == value:
