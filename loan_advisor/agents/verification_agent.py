@@ -23,22 +23,24 @@ class VerificationAgent(BaseAgent):
         new_pan = self._find_pan_attempt(message)
         new_aadhar = self._find_aadhar_attempt(message)
         
-        # Update application with new values if found
-        if new_pan:
-            application.customer.pan = new_pan
-        if new_aadhar:
-            application.customer.aadhar = new_aadhar
-        
-        # Validate current PAN/Aadhar and aggregate errors
+        # Validate and update if found
         errors: list[str] = []
-        pan_to_check = application.customer.pan
-        if pan_to_check and not self._is_valid_pan(pan_to_check):
-            errors.append("Invalid PAN format")
-            application.customer.pan = None  # Clear invalid PAN
-        aadhar_to_check = application.customer.aadhar
-        if aadhar_to_check and not self._is_valid_aadhar(aadhar_to_check):
-            errors.append("Invalid Aadhar format")
-            application.customer.aadhar = None  # Clear invalid Aadhar
+        pan_to_check = None
+        aadhar_to_check = None
+        
+        if new_pan:
+            if self._is_valid_pan(new_pan):
+                application.customer.pan = new_pan
+            else:
+                errors.append("Invalid PAN format")
+                pan_to_check = new_pan
+        
+        if new_aadhar:
+            if self._is_valid_aadhar(new_aadhar):
+                application.customer.aadhar = new_aadhar
+            else:
+                errors.append("Invalid Aadhar format")
+                aadhar_to_check = new_aadhar
 
         if errors:
             err_msg = ""
@@ -143,10 +145,14 @@ class VerificationAgent(BaseAgent):
         return None
 
     def _find_aadhar_attempt(self, message: str) -> str | None:
-        """Find a sequence of 10–14 digits when user mentions Aadhar or provides digits."""
+        """Find exactly 12 digits when user mentions Aadhar."""
         msg = message or ""
-        if re.search(r"\baadhar|aadhaar\b", msg.lower()) or re.search(r"\b\d{10,14}\b", msg):
-            m = re.search(r"\b(\d{10,14})\b", msg)
+        ml = msg.lower()
+        
+        # Only look for Aadhar if user mentions it
+        if 'aadhar' in ml or 'aadhaar' in ml:
+            # Look for exactly 12 digits
+            m = re.search(r"\b(\d{12})\b", msg)
             if m:
                 return m.group(1)
         return None
