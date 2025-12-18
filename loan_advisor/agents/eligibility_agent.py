@@ -233,6 +233,31 @@ class EligibilityAgent(BaseAgent):
             total_payable = application.emi * application.tenure_months
             total_interest = total_payable - application.loan_amount
             
+            # Check if user has confirmed the loan terms
+            confirmation_keywords = ['yes', 'confirm', 'proceed', 'approve', 'accept', 'agree']
+            user_confirmed = any(keyword in ml for keyword in confirmation_keywords)
+            
+            # If salary was just provided (not a confirmation), ask for confirmation first
+            if not user_confirmed and 'salary' in ml:
+                return AgentResponse(
+                    agent_name=self.name,
+                    message=(
+                        f"**Eligibility Confirmed!**\n\n"
+                        f"**Your Loan Summary:**\n"
+                        f"• Loan Amount: ₹{application.loan_amount:,.0f}\n"
+                        f"• Monthly EMI: ₹{application.emi:,.0f}\n"
+                        f"• Tenure: {application.tenure_months} months\n"
+                        f"• Interest Rate: {application.interest_rate}% p.a.\n"
+                        f"• Total Interest: ₹{total_interest:,.0f}\n"
+                        f"• Total Payable: ₹{total_payable:,.0f}\n"
+                        f"• Monthly Salary: ₹{application.customer.salary:,.0f}\n"
+                        f"• EMI-to-Salary Ratio: {emi_ratio:.1f}% (within 50% limit)\n\n"
+                        f"**Do you confirm these loan terms and wish to proceed with approval?**\n"
+                        f"Reply 'Yes' to proceed or let me know if you'd like to adjust anything."
+                    ),
+                    action_required="confirm_terms"
+                )
+            
             return AgentResponse(
                 agent_name=self.name,
                 message=(

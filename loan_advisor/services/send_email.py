@@ -78,6 +78,12 @@ def send_email(to_email, subject, body, retries=3, delay=5):
     print("Failed to send email after multiple attempts.")
 
 def authenticate_gmail_on_render():
+
+#  Genetaing base64 token for Render deployment
+# import base64
+# data = open("token.pickle", "rb").read()
+# print(base64.b64encode(data).decode())
+
     b64 = os.environ["GMAIL_TOKEN_B64"]
     if not b64:
         raise ValueError("GMAIL_TOKEN_B64 environment variable is not set.")
