@@ -88,18 +88,9 @@ class PDFAgent(BaseAgent):
         return AgentResponse(
             agent_name=self.name,
             message=(
-                f"**Congratulations! Your loan has been APPROVED!**\n\n"
-                f"**Loan Details:**\n"
-                f"• Loan Amount: ₹{application.loan_amount:,.0f}\n"
-                f"• Monthly EMI: ₹{application.emi:,.0f}\n"
-                f"• Tenure: {application.tenure_months} months\n"
-                f"• Interest Rate: {application.interest_rate}% p.a.\n"
-                f"• Total Interest: ₹{total_interest:,.0f}\n"
-                f"• Total Payable: ₹{total_payable:,.0f}\n\n"
-                f"**Email Sent:**\n"
+                f"**Your SYNFIN sanction letter has been generated successfully!**\n\n"
+                f"**Email Confirmation:**\n"
                 f"A confirmation email with your sanction letter has been sent to {application.customer.email}.\n\n"
-                f"**Sanction Letter:**\n"
-                f"Your official sanction letter has been generated and attached to the email.\n\n"
                 f"**Next Steps:**\n"
                 f"• Check your email for the sanction letter\n"
                 f"• Review the terms and conditions\n"
